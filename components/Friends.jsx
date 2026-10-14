@@ -7,6 +7,7 @@ import PlayerBar from "./PlayerBar";
 import { TIMES } from "@/lib/constants";
 import { buildGame, capturedInfo } from "@/lib/chessUtil";
 import { Nav } from "./PlayPanel";
+import { resolveFriendSession } from "@/lib/friendSession";
 
 export default function Friends() {
   const [room, setRoom] = useState(null);
@@ -24,14 +25,13 @@ export default function Friends() {
   const revision = useRef(0);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("room");
-    const secret = new URLSearchParams(window.location.hash.slice(1)).get("invite");
+    let saved;
     try {
-      const saved = JSON.parse(sessionStorage.getItem("gambit:room") || "null");
-      if (saved && (!id || saved.id === id)) { setSession(saved); return; }
+      saved = JSON.parse(sessionStorage.getItem("gambit:room") || "null");
     } catch { /* Private browsing may disable storage. */ }
-    if (id && secret) setInvite({ id, token: secret });
+    const initial = resolveFriendSession(window.location.search, window.location.hash, saved);
+    if (initial.invite) setInvite(initial.invite);
+    else if (initial.session) setSession(initial.session);
   }, []);
 
   const saveSession = (value) => {
@@ -42,8 +42,10 @@ export default function Friends() {
     const response = await fetch(url, { method: action ? "POST" : "GET", cache: "no-store",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       ...(action ? { body: JSON.stringify(action) } : {}) });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Could not connect. Please try again.");
+    let data;
+    try { data = await response.json(); }
+    catch { throw new Error("The game server returned an invalid response. Restart the local server and try again."); }
+    if (!response.ok) throw Object.assign(new Error(data.error || "Could not connect. Please try again."), { status: response.status });
     return data;
   };
 
@@ -57,7 +59,17 @@ export default function Friends() {
         try {
           const data = await request(`/api/rooms/${session.id}`, session.token);
           if (!cancelled && !lock.current && version === revision.current) { setRoom(data); setError(""); }
-        } catch (e) { if (!cancelled) setError(e.message); }
+        } catch (e) {
+          if (!cancelled && version === revision.current) {
+            if ([403, 404, 410].includes(e.status)) {
+              try { sessionStorage.removeItem("gambit:room"); } catch { /* Storage unavailable. */ }
+              setSession(null); setRoom(null); setView(null);
+              setError(`${e.message} Create a new invite below.`);
+              return;
+            }
+            setError(e.message);
+          }
+        }
       }
       if (!cancelled) timer = setTimeout(poll, 1000);
     };

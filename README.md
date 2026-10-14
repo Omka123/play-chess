@@ -10,7 +10,19 @@ npm run dev      # http://localhost:3000
 npm run build && npm start
 ```
 
-No environment variables are needed. Online friend games require a **single persistent Node.js server with a writable disk** (`npm run build`, then `npm start`). Rooms are saved privately in `.gambit-rooms/`, last for 24 hours, and use server-validated moves and clocks. This storage implementation is not suitable for Vercel/serverless or multiple server instances; use a shared database and distributed locking before deploying there. Expired room files can be removed periodically by the server administrator.
+Bots and puzzles need no environment variables. Local friend games default to a private file store in `.gambit-rooms/` on a single Node server. Hosted friend games use Upstash Redis when configured; on Vercel these settings are required. Rooms expire after 24 hours. Redis updates use atomic compare-and-set to protect moves, joins, and clocks across server instances.
+
+## Deploy friend games to Vercel
+
+1. Create an Upstash Redis database, directly at Upstash or through the Vercel Marketplace integration.
+2. Copy its **REST URL** and **REST token** (a token with read/write permissions).
+3. In your Vercel project's **Settings → Environment Variables**, set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Include Production and, if you test preview deployments, Preview. Use the exact variable names from `.env.example`; do not add `NEXT_PUBLIC_`.
+4. Deploy the updated source and redeploy after adding/changing variables. Existing deployments do not receive newly added variables.
+5. Open Friends and create a new invite. Old local-file rooms are not migrated to Redis.
+
+For local Redis testing, copy `.env.example` to `.env.local` and fill in the two values. Without them, local development continues to use files. On Vercel the API reports a missing database configuration explicitly instead of attempting filesystem writes. Tests use local files and a Redis mock, never your configured live database.
+
+REST API reference: https://upstash.com/docs/redis/features/restapi
 
 ## Play with a friend
 
@@ -44,7 +56,7 @@ Rules come from `chess.js`. The bot is a small custom engine, so it is club-leve
 ## Next steps toward a real chess site
 
 1. **Accounts**: add Auth.js (NextAuth) with a Postgres database via Prisma.
-2. **Scale multiplayer**: replace the single-server file store with shared transactional storage, add rate limiting, and optionally replace polling with a WebSocket service.
+2. **Scale multiplayer**: add rate limiting and optionally replace polling with a WebSocket service. Shared Redis room storage is already supported.
 3. **Ratings**: store games and update Glicko-2 ratings after each result.
 4. **Stronger bots**: load Stockfish (WASM) in the worker instead of `engine.js`.
 5. **More puzzles**: import the open Lichess puzzle database (CC0).

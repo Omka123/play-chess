@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node --experimental-default-type=module tests/rooms.mjs",
+    "test": "node --experimental-default-type=module tests/run.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
