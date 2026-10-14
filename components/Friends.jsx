@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import Board from "./Board";
 import PlayerBar from "./PlayerBar";
@@ -54,11 +54,15 @@ export default function Friends() {
     let cancelled = false;
     let timer;
     const poll = async () => {
+      const started = Date.now();
+      let finished = false;
       if (!lock.current) {
         const version = revision.current;
         try {
           const data = await request(`/api/rooms/${session.id}`, session.token);
-          if (!cancelled && !lock.current && version === revision.current) { setRoom(data); setError(""); }
+          if (!cancelled && !lock.current && version === revision.current) {
+            setRoom(data); setError(""); finished = !!data.result;
+          }
         } catch (e) {
           if (!cancelled && version === revision.current) {
             if ([403, 404, 410].includes(e.status)) {
@@ -71,7 +75,8 @@ export default function Friends() {
           }
         }
       }
-      if (!cancelled) timer = setTimeout(poll, 1000);
+      // Schedule from request start; avoid adding a full delay after network latency.
+      if (!cancelled && !finished) timer = setTimeout(poll, Math.max(100, 500 - (Date.now() - started)));
     };
     poll();
     return () => { cancelled = true; clearTimeout(timer); };
@@ -87,6 +92,7 @@ export default function Friends() {
         window.history.replaceState(null, "", `?room=${invite.id}`);
       } else {
         const data = await request("/api/rooms", null, { name, color, tc });
+        setRoom(data);
         saveSession({ id: data.id, token: data.token });
       }
     } catch (e) { setError(e.message); }
@@ -96,8 +102,18 @@ export default function Friends() {
     if (lock.current) return;
     revision.current += 1;
     lock.current = true; setBusy(true); setError("");
+    const previous = room;
+    if (action.type === "move") {
+      // Show a legal move immediately while the server confirms it.
+      const optimistic = buildGame(undefined, room.moves);
+      try {
+        const move = optimistic.move({ from: action.from, to: action.to, promotion: action.promotion || "q" });
+        setRoom({ ...room, moves: [...room.moves, { from: move.from, to: move.to, san: move.san, ...(move.promotion ? { promotion: move.promotion } : {}) }] });
+        setView(null);
+      } catch { lock.current = false; setBusy(false); return; }
+    }
     try { setRoom(await request(`/api/rooms/${session.id}`, session.token, action)); setView(null); }
-    catch (e) { setError(e.message); }
+    catch (e) { setRoom(previous); setError(e.message); }
     finally { lock.current = false; setBusy(false); }
   };
   const reset = () => {
@@ -107,10 +123,10 @@ export default function Friends() {
     window.history.replaceState(null, "", window.location.pathname);
   };
 
-  const moves = room?.moves || [];
+  const moves = useMemo(() => room?.moves || [], [room?.moves]);
   const ply = view === null ? moves.length : Math.min(view, moves.length);
-  const game = buildGame(undefined, moves);
-  const shown = ply === moves.length ? game : buildGame(undefined, moves, ply);
+  const game = useMemo(() => buildGame(undefined, moves), [moves]);
+  const shown = useMemo(() => ply === moves.length ? game : buildGame(undefined, moves, ply), [game, moves, ply]);
   const orient = flipped ? (room?.color === "w" ? "b" : "w") : room?.color || "w";
   const top = orient === "w" ? "b" : "w";
   const info = capturedInfo(shown);

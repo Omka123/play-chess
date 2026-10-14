@@ -4,6 +4,7 @@ import { createRoom, accessRoom } from "../lib/rooms.js";
 const originalFetch = globalThis.fetch;
 const values = new Map();
 let conflict = true;
+const commands = [];
 process.env.UPSTASH_REDIS_REST_URL = "https://redis.test";
 process.env.UPSTASH_REDIS_REST_TOKEN = "test-only";
 process.env.VERCEL = "1";
@@ -11,6 +12,7 @@ globalThis.fetch = async (url, options) => {
   assert.equal(url, "https://redis.test");
   assert.equal(options.headers.Authorization, "Bearer test-only");
   const args = JSON.parse(options.body);
+  commands.push(args[0]);
   let result;
   if (args[0] === "SET") {
     assert.equal(args[3], "EX");
@@ -30,6 +32,9 @@ globalThis.fetch = async (url, options) => {
 
 try {
   const host = await createRoom({ name: "Host", color: "w", tc: 300 });
+  assert.equal(host.color, "w");
+  assert.equal(host.joined, false);
+  assert.deepEqual(host.moves, []);
   const guest = await accessRoom(host.id, host.invite, { type: "join", name: "Guest" });
   assert.equal(guest.color, "b");
   assert.equal(guest.invite, undefined);
@@ -38,13 +43,18 @@ try {
     accessRoom(host.id, host.token, { type: "move", from: "d2", to: "d4", ply: 0 }),
   ]);
   assert.equal(outcomes.filter((r) => r.status === "fulfilled").length, 1);
+  commands.length = 0;
+  const storedBefore = values.get(`gambit:room:${host.id}`);
   const room = await accessRoom(host.id, guest.token);
+  assert.deepEqual(commands, ["GET"]);
+  assert.equal(values.get(`gambit:room:${host.id}`), storedBefore);
   assert.equal(room.moves.length, 1);
   await assert.rejects(accessRoom(host.id, host.invite, { type: "join" }), /two players/);
   await assert.rejects(accessRoom(host.id, "bad"), /session/);
   const raw = JSON.parse(values.get(`gambit:room:${host.id}`));
   raw.updated = Date.now() - 301000;
   values.set(`gambit:room:${host.id}`, JSON.stringify(raw));
+  assert.equal((await accessRoom(host.id, guest.token)).result.title, "Host wins");
   assert.equal((await accessRoom(host.id, guest.token)).result.title, "Host wins");
   delete process.env.UPSTASH_REDIS_REST_TOKEN;
   await assert.rejects(createRoom({}), /Set UPSTASH_REDIS/);

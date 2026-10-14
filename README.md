@@ -26,7 +26,7 @@ REST API reference: https://upstash.com/docs/redis/features/restapi
 
 ## Play with a friend
 
-Open **Friends**, enter your name, choose your colour and clock, and create a link. Send the link to your friend; they enter their name and join. Moves sync approximately once per second. The clock starts when the second player joins. Reloading the same tab reconnects using a private session stored in sessionStorage. Keep the invite private: anyone with it can claim the other seat. Each game supports two players.
+Open **Friends**, enter your name, choose your colour and clock, and create a link. Send the link to your friend; they enter their name and join. Sync checks target a 500ms interval, subject to network latency. Your own legal moves display immediately while the server confirms them; rejected moves revert. Polling reads storage without writing, and stops after a game result. The clock starts when the second player joins. Reloading the same tab reconnects using a private session stored in sessionStorage. Keep the invite private: anyone with it can claim the other seat. Each game supports two players.
 
 Both devices must reach the same server URL. A localhost link only works on the host device; for another device use a reachable LAN address or host the app on a public Node server with HTTPS. Public production use should also add rate limiting for room creation and joining.
 
