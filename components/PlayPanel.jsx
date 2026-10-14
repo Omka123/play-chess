@@ -42,10 +42,15 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
   if (play.stage === "setup") {
     return (
       <div className="card">
-        <h2>Play a bot</h2>
-        <p className="sub">Pick an opponent, your colour, and a clock.</p>
+        <h2>Play Computer</h2>
+        <p className="sub">Open Play with Bot to choose your opponent.</p>
 
-        <div className="label">Opponent</div>
+        <details className="bot-category">
+          <summary>
+            <span className="bot-category-icon" aria-hidden="true">♟</span>
+            <span><strong>Play with Bot</strong><small>{BOTS.length} bots · Selected: {bot.name}</small></span>
+            <span className="bot-category-arrow" aria-hidden="true">›</span>
+          </summary>
         <div className="botlist">
           {BOTS.map((b) => (
             <button key={b.id} className="bot" aria-pressed={play.botId === b.id} onClick={() => onPrefs({ botId: b.id })}>
@@ -59,6 +64,7 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
             </button>
           ))}
         </div>
+        </details>
 
         <div className="label">You play</div>
         <div className="seg">

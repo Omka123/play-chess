@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import Board from "./Board";
 import Friends from "./Friends";
+import Link from "next/link";
+import SiteFooter from "./SiteFooter";
+import { LESSONS } from "@/lib/lessons";
 import PlayerBar from "./PlayerBar";
 import PlayPanel from "./PlayPanel";
 import PuzzlePanel from "./PuzzlePanel";
@@ -296,19 +299,20 @@ export default function Gambit() {
       <header className="top">
         <div className="brand">
           <span className="mark" aria-hidden="true">{"\u265E\uFE0E"}</span>
-          Gambit
+          ChessNexa
         </div>
         <nav className="tabs" role="tablist" aria-label="Modes">
           <button role="tab" aria-selected={mode === "play"} onClick={() => setMode("play")}><span className="nav-icon" aria-hidden="true">♟</span>Play<span className="nav-detail">Challenge a computer</span></button>
           <button role="tab" aria-selected={mode === "friends"} onClick={() => setMode("friends")}><span className="nav-icon" aria-hidden="true">♞</span>Friends<span className="nav-detail">Invite & play online</span></button>
           <button role="tab" aria-selected={mode === "puzzle"} onClick={() => setMode("puzzle")}><span className="nav-icon" aria-hidden="true">◆</span>Puzzles<span className="nav-detail">Train your tactics</span></button>
         </nav>
+        <Link href="/learn" className="sidebar-learn">Learn chess <span aria-hidden="true">→</span></Link>
         <button className="theme-btn" onClick={toggleTheme} aria-label="Toggle light and dark theme" title="Toggle theme">&#9680;</button>
       </header>
 
       <div className="sidebar-footer"><span className="sidebar-knight" aria-hidden="true">♞</span><strong>Your next great move.</strong><span>A little chess, every day.</span></div>
       <section className="intro">
-        <div><span className="eyebrow">GAMBIT CHESS</span><h1>{mode === "play" ? "Play Computer" : mode === "friends" ? "Play with Friends" : "Chess Puzzles"}</h1></div>
+        <div><span className="eyebrow">CHESSNEXA</span><h1>{mode === "play" ? "Play Computer" : mode === "friends" ? "Play with Friends" : "Chess Puzzles"}</h1></div>
         <span className="club-badge"><span /> No account needed</span>
       </section>
       <div hidden={mode !== "friends"}><Friends /></div>
@@ -356,6 +360,8 @@ export default function Gambit() {
           )}
         </aside>
       </main>
+      <section className="home-learning"><span className="eyebrow">PLAY WITH A PLAN</span><h2>Learn something you can use in your next game.</h2><p>Practice opening plans, recognize tactical threats, and understand why a position is checkmate. Read a guide, try its board exercise, then test the idea in a game.</p><div className="lesson-grid">{LESSONS.map((lesson) => <Link key={lesson.slug} className="lesson-card" href={`/learn/${lesson.slug}`}><span className="eyebrow">{lesson.category}</span><h3>{lesson.title}</h3><p>{lesson.description}</p><span className="lesson-link">Read & practice →</span></Link>)}</div></section>
+      <SiteFooter />
     </>
   );
 }

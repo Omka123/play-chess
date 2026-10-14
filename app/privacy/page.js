@@ -1,0 +1,14 @@
+import Link from "next/link";
+import ContentShell from "@/components/ContentShell";
+import { operator } from "@/lib/site";
+export const metadata = { title: "Privacy & Browser Storage | ChessNexa", description: "How ChessNexa uses browser storage, private game rooms, and hosting services in its current version." };
+export default function Privacy() {
+  return <ContentShell><h1>Privacy and browser storage</h1><p className="content-lead">This page describes the current ChessNexa application. It is not a description of advertising or analytics services that have not been installed.</p>
+    {operator && <p>The site is operated by {operator}.</p>}
+    <h2>Practice games and preferences</h2><p>Bot games and puzzle positions run in your browser. ChessNexa stores your selected bot, color, clock preference, completed-puzzle list, and theme in localStorage. These values help restore your preferences when you return. Clearing this site's browser data removes them.</p>
+    <h2>Friend games</h2><p>When you create or join a friend game, the server stores your chosen display name, game moves, remaining time, room expiry, invitation secret, and player-session credentials. The display name and position are shared with the other player. You do not need to provide a real name.</p><p>Player-session credentials are kept in your tab's sessionStorage so you can reconnect after a reload. The invite grants access to the second seat; treat it as private. Game rooms become inaccessible after 24 hours. When the hosted Redis store is used, room records are set to expire automatically. Other storage configurations and hosting logs may retain records separately.</p>
+    <h2>Hosting and service providers</h2><p>The deployed application uses its hosting provider to deliver pages and process requests. Configured hosted friend games use Upstash Redis for room storage. Requests to these services can include technical information such as IP addresses and request logs. Provider retention is governed by their settings and policies.</p><p>Learn more in the <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Vercel privacy policy</a> and <a href="https://upstash.com/trust/privacy.pdf" target="_blank" rel="noopener noreferrer">Upstash privacy policy</a>.</p>
+    <h2>Advertising and analytics</h2><p>The current application does not load Google AdSense or a third-party analytics tracker. Adding such services would change how visitor information is processed. This notice must be updated and applicable consent controls introduced before those services are enabled.</p>
+    <h2>Your choices and questions</h2><p>You can clear browser storage, avoid entering a personal name, and stop sharing an invite. For questions about stored room information or privacy, visit <Link href="/contact">Contact</Link>. Do not publish your player token or database credentials.</p>
+  </ContentShell>;
+}

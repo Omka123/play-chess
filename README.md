@@ -1,4 +1,4 @@
-# Gambit
+# ChessNexa
 
 A chess site built with Next.js (App Router): invite friends online, play five bots, solve mate-in-one puzzles, drag-and-drop or click to move, clocks, move review, light/dark theme.
 
@@ -24,7 +24,17 @@ For local Redis testing, copy `.env.example` to `.env.local` and fill in the two
 
 REST API reference: https://upstash.com/docs/redis/features/restapi
 
-## Play with a friend
+## Content and AdSense review preparation
+
+The public site includes a learning hub, four original chess guides, three interactive exercises, and About, Contact, Privacy and Terms pages. Sample ad cards are retained in source for future customization but removed from visitor pages. No live AdSense script is installed and no approval is guaranteed.
+
+Before publishing for review, set `SITE_URL` to your public HTTPS origin, `SITE_OPERATOR` to your real public operator name, and `SUPPORT_EMAIL` to a monitored public contact address. Redeploy after configuring them. `SITE_URL` supplies the sitemap and homepage canonical URL; without it, the sitemap intentionally has no invented domain. Review all editorial and policy text for accuracy against your deployment.
+
+When adding AdSense, use your actual publisher account, update privacy disclosures to describe Google/third-party advertising cookies, and configure a Google-certified consent platform where required for EEA/UK/Switzerland traffic. Do not publish a fake ads.txt publisher ID. Google evaluates the live site; passing tests is not evidence of approval.
+
+Official guidance: https://support.google.com/adsense/answer/7299563
+
+## Playing online
 
 Open **Friends**, enter your name, choose your colour and clock, and create a link. Send the link to your friend; they enter their name and join. Sync checks target a 500ms interval, subject to network latency. Your own legal moves display immediately while the server confirms them; rejected moves revert. Polling reads storage without writing, and stops after a game result. The clock starts when the second player joins. Reloading the same tab reconnects using a private session stored in sessionStorage. Keep the invite private: anyone with it can claim the other seat. Each game supports two players.
 

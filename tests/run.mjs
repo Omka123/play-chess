@@ -5,3 +5,4 @@ delete process.env.VERCEL;
 await import("./rooms.mjs");
 await import("./redisRooms.mjs");
 await import("./friendSession.mjs");
+await import("./lessons.mjs");

@@ -1,10 +1,12 @@
 import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
+import { siteUrl } from "@/lib/site";
 
 const font = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
 
 export const metadata = {
-  title: "Gambit: Play Chess",
+  ...(siteUrl() ? { metadataBase: new URL(siteUrl()) } : {}),
+  title: "ChessNexa: Play Chess",
   description: "Invite friends to play chess online, challenge five bots, and solve checkmate puzzles.",
 };
 
