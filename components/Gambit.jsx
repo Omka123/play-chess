@@ -44,6 +44,8 @@ export default function Gambit() {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("room")) setMode("friends");
     try {
+      const savedTheme = localStorage.getItem("gambit:theme");
+      document.documentElement.dataset.theme = savedTheme === "light" ? "light" : "dark";
       const pr = JSON.parse(localStorage.getItem("gambit:prefs") || "null");
       if (pr) setPlay((p) => ({ ...p, botId: pr.botId || p.botId, color: pr.color || p.color, tc: typeof pr.tc === "number" ? pr.tc : p.tc }));
       const s = JSON.parse(localStorage.getItem("gambit:solved") || "null");
@@ -249,6 +251,7 @@ export default function Gambit() {
     const cur = root.dataset.theme;
     const dark = cur ? cur === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
     root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("gambit:theme", root.dataset.theme); } catch { /* storage unavailable */ }
   };
 
   /* ---------- view props ---------- */
@@ -296,15 +299,16 @@ export default function Gambit() {
           Gambit
         </div>
         <nav className="tabs" role="tablist" aria-label="Modes">
-          <button role="tab" aria-selected={mode === "play"} onClick={() => setMode("play")}>Play</button>
-          <button role="tab" aria-selected={mode === "friends"} onClick={() => setMode("friends")}>Friends</button>
-          <button role="tab" aria-selected={mode === "puzzle"} onClick={() => setMode("puzzle")}>Puzzles</button>
+          <button role="tab" aria-selected={mode === "play"} onClick={() => setMode("play")}><span className="nav-icon" aria-hidden="true">♟</span>Play<span className="nav-detail">Challenge a computer</span></button>
+          <button role="tab" aria-selected={mode === "friends"} onClick={() => setMode("friends")}><span className="nav-icon" aria-hidden="true">♞</span>Friends<span className="nav-detail">Invite & play online</span></button>
+          <button role="tab" aria-selected={mode === "puzzle"} onClick={() => setMode("puzzle")}><span className="nav-icon" aria-hidden="true">◆</span>Puzzles<span className="nav-detail">Train your tactics</span></button>
         </nav>
         <button className="theme-btn" onClick={toggleTheme} aria-label="Toggle light and dark theme" title="Toggle theme">&#9680;</button>
       </header>
 
+      <div className="sidebar-footer"><span className="sidebar-knight" aria-hidden="true">♞</span><strong>Your next great move.</strong><span>A little chess, every day.</span></div>
       <section className="intro">
-        <div><span className="eyebrow">YOUR DAILY CHESS CLUB</span><h1>Make your next move.</h1><p>Challenge a bot, invite a friend, or find that perfect checkmate.</p></div>
+        <div><span className="eyebrow">GAMBIT CHESS</span><h1>{mode === "play" ? "Play Computer" : mode === "friends" ? "Play with Friends" : "Chess Puzzles"}</h1></div>
         <span className="club-badge"><span /> No account needed</span>
       </section>
       <div hidden={mode !== "friends"}><Friends /></div>

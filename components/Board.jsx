@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FILES, GLYPH, PIECE_NAMES } from "@/lib/constants";
+import { createPortal } from "react-dom";
+import ChessPiece from "./ChessPiece";
+import { FILES, PIECE_NAMES } from "@/lib/constants";
 import { colorName, kingSquare } from "@/lib/chessUtil";
 
 /**
@@ -102,11 +104,9 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
       const label = `${p ? `${colorName(p.color)} ${PIECE_NAMES[p.type]} on ` : ""}${sq}`;
       squares.push(
         <div key={sq} className={cls} data-sq={sq} role="gridcell" aria-label={label} onPointerDown={(e) => onDown(e, sq)}>
-          {j === 0 && <span className="coord r">{8 - r}</span>}
-          {i === 7 && <span className="coord f">{FILES[c]}</span>}
           {targets[sq] && (p ? <span className="ring" /> : <span className="dot" />)}
           {p && (
-            <span className={`piece ${p.color}${ghost && ghost.from === sq ? " dragging" : ""}`}>{GLYPH[p.type]}</span>
+            <span className={`piece ${p.color}${ghost && ghost.from === sq ? " dragging" : ""}`}><ChessPiece type={p.type} color={p.color} /></span>
           )}
         </div>
       );
@@ -115,6 +115,12 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
 
   return (
     <div className="boardwrap">
+      {["top", "bottom"].map((edge) => <div key={edge} className={`frame-coords ${edge}`} aria-hidden="true">
+        {(flip ? [...FILES].reverse() : [...FILES]).map((file) => <span key={file}>{file}</span>)}
+      </div>)}
+      {["left", "right"].map((edge) => <div key={edge} className={`frame-coords ${edge}`} aria-hidden="true">
+        {Array.from({ length: 8 }, (_, i) => <span key={i}>{flip ? i + 1 : 8 - i}</span>)}
+      </div>)}
       <div className="board" role="grid" aria-label="Chess board">{squares}</div>
 
       {promo && (
@@ -127,17 +133,17 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
                 aria-label={`Promote to ${PIECE_NAMES[k]}`}
                 onClick={() => { const pm = promo; setPromo(null); setSelected(null); onMove(pm.from, pm.to, k); }}
               >
-                {GLYPH[k]}
+                <ChessPiece type={k} color={promo.color} />
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {ghost && (
-        <div className={`ghost ${ghost.color}`} style={{ left: ghost.x, top: ghost.y, fontSize: ghost.size * 0.82 }}>
-          {GLYPH[ghost.type]}
-        </div>
+      {ghost && createPortal(
+        <div className={`ghost ${ghost.color}`} style={{ left: ghost.x, top: ghost.y, width: ghost.size * 0.92, height: ghost.size * 0.92 }}>
+          <ChessPiece type={ghost.type} color={ghost.color} />
+        </div>, document.body
       )}
     </div>
   );
