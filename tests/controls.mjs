@@ -1,0 +1,36 @@
+import assert from "node:assert/strict";
+import { unlink } from "node:fs/promises";
+import path from "node:path";
+import { createRoom, accessRoom } from "../lib/rooms.js";
+import { gamePgn } from "../lib/gameExport.js";
+import { parseEngineInfo, uciMove } from "../lib/stockfish.js";
+import { Chess } from "chess.js";
+const ids = [];
+try {
+  const host = await createRoom({ name: "White", color: "w", tc: 180, increment: 2 }); ids.push(host.id);
+  const guest = await accessRoom(host.id, host.invite, { type: "join", name: "Black" });
+  const moved = await accessRoom(host.id, host.token, { type: "move", from: "e2", to: "e4", ply: 0 });
+  assert.ok(moved.clocks.w > 180000);
+  assert.equal(moved.increment, 2);
+  await accessRoom(host.id, host.token, { type: "offerDraw" });
+  await assert.rejects(accessRoom(host.id, host.token, { type: "acceptDraw" }), /no opponent/);
+  await accessRoom(host.id, guest.token, { type: "declineDraw" });
+  assert.equal((await accessRoom(host.id, host.token)).drawOffer, null);
+  await accessRoom(host.id, guest.token, { type: "offerDraw" });
+  assert.equal((await accessRoom(host.id, host.token, { type: "acceptDraw" })).result.detail, "Draw by agreement.");
+  await accessRoom(host.id, host.token, { type: "rematch" });
+  const rematch = await accessRoom(host.id, guest.token, { type: "rematch" });
+  ids.push(rematch.rematchSession.id);
+  const next = await accessRoom(rematch.rematchSession.id, rematch.rematchSession.token);
+  assert.equal(next.color, "w"); assert.equal(next.names.w, "Black"); assert.equal(next.moves.length, 0); assert.equal(next.increment, 2);
+  const hostNext = (await accessRoom(host.id, host.token)).rematchSession;
+  assert.equal((await accessRoom(hostNext.id, hostNext.token)).color, "b");
+  const pgn = gamePgn({ moves: moved.moves, names: moved.names, outcome: "draw", color: "w", tc: 180, increment: 2 });
+  const parsed = new Chess(); parsed.loadPgn(pgn);
+  assert.equal(parsed.history()[0], "e4"); assert.match(pgn, /TimeControl "180\+2"/);
+  assert.deepEqual(uciMove("a7a8q"), { from: "a7", to: "a8", promotion: "q" });
+  assert.equal(parseEngineInfo("info depth 14 score cp 125 pv e2e4 e7e5").score, 125);
+  assert.equal(parseEngineInfo("info depth 16 score mate -3 pv e1e2").mate, -3);
+  assert.equal(parseEngineInfo("info depth 14 score cp 125 lowerbound pv e2e4"), null);
+  console.log("Passed: clock increments, draw offers, mutual rematches, swapped seats, PGN replay, promotions, and Stockfish UCI parsing.");
+} finally { for (const id of ids) await unlink(path.join(process.cwd(), ".gambit-rooms", `${id}.json`)).catch(() => {}); }

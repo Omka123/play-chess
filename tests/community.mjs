@@ -1,0 +1,73 @@
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { unlink } from "node:fs/promises";
+import path from "node:path";
+import { registerPlayer, socialAction, matchmaking, settleRatedGame, ratingCategory, savePuzzle, dayKey } from "../lib/community.js";
+import { communityTransaction } from "../lib/communityStore.js";
+import { accessRoom } from "../lib/rooms.js";
+import { listGames } from "../lib/gameHistory.js";
+import { PUZZLES, matingMoves } from "../lib/puzzles.js";
+
+const prefix = randomUUID().slice(0, 8);
+const a = { id: `test-${prefix}-a`, name: "Alice" }, b = { id: `test-${prefix}-b`, name: "Bob" }, c = { id: `test-${prefix}-c`, name: "Carol" };
+const rooms = [];
+try {
+  const profile = await registerPlayer(a);
+  assert.deepEqual(profile.ratings, { bullet: 1200, blitz: 1200, rapid: 1200 });
+  await registerPlayer(b); await registerPlayer(c);
+  await socialAction(a, { type: "profile", username: `alice_${prefix}`, name: "Alice Chess", avatar: "queen" });
+  await assert.rejects(socialAction(b, { type: "profile", username: `alice_${prefix}`, name: "Copy", avatar: "king" }), /taken/);
+  await assert.rejects(socialAction(a, { type: "profile", username: "../evil", name: "Bad", avatar: "king" }), /Username/);
+  assert.equal((await registerPlayer(a)).name, "Alice Chess");
+  assert.equal((await socialAction(a)).profile.avatar, "queen");
+  const bp = await registerPlayer(b);
+  await socialAction(a, { type: "request", username: bp.username });
+  assert.equal((await socialAction(b)).requests.length, 1);
+  await socialAction(b, { type: "accept", userId: a.id });
+  assert.equal((await socialAction(a)).friends[0].id, b.id);
+  await assert.rejects(socialAction(c, { type: "accept", userId: a.id }), /not found/);
+  assert.equal((await matchmaking(a, { tc: 180, increment: 2 })).waiting, true);
+  const matched = await matchmaking(b, { tc: 180, increment: 2 });
+  assert.ok(matched.session.token);
+  const again = await matchmaking(a, { tc: 180, increment: 2 });
+  assert.equal(again.session.id, matched.session.id);
+  rooms.push(matched.session.id);
+  const stored = await communityTransaction((state) => structuredClone(state.rooms[matched.session.id]), { readOnly: true });
+  assert.notEqual(stored.users.w, stored.users.b);
+  assert.equal((await socialAction(c)).active, null);
+  await accessRoom(matched.session.id, matched.session.token, { type: "resign" }, b);
+  const ar = await registerPlayer(a), br = await registerPlayer(b);
+  assert.equal(ar.ratings.blitz, 1216); assert.equal(br.ratings.blitz, 1184);
+  assert.equal(ar.ratedCount, 1);
+  const finished = { ...stored, result: { title: "Alice wins", detail: "Resignation." }, winner: stored.users.w === a.id ? "w" : "b", finishedAt: Date.now() };
+  await settleRatedGame(finished);
+  assert.equal((await registerPlayer(a)).ratedCount, 1);
+  assert.equal((await listGames(a.id))[0].rated, true);
+  assert.equal((await socialAction(a)).active, null);
+  await socialAction(a, { type: "challenge", userId: b.id });
+  const challenge = (await socialAction(b)).challenges[0];
+  await assert.rejects(socialAction(c, { type: "acceptChallenge", id: challenge.id }), /not found/);
+  const accepted = await socialAction(b, { type: "acceptChallenge", id: challenge.id });
+  rooms.push(accepted.active.id);
+  assert.equal((await socialAction(a)).active.id, accepted.active.id);
+  const direct = await accessRoom(accepted.active.id, accepted.active.token, undefined, b);
+  assert.equal(direct.rated, false);
+  await accessRoom(accepted.active.id, accepted.active.token, { type: "resign" }, b);
+  assert.equal((await registerPlayer(a)).ratedCount, 1);
+  await matchmaking(c, { tc: 60 });
+  assert.equal((await matchmaking(c, { type: "cancel", tc: 60 })).waiting, false);
+  assert.equal(await communityTransaction((state) => Boolean(state.queue[c.id]), { readOnly: true }), false);
+  const daily = Math.floor(Date.now() / 86400000) % PUZZLES.length;
+  const move = matingMoves(PUZZLES[daily].fen)[0];
+  const progress = await savePuzzle(a, daily, move, dayKey());
+  assert.ok(progress.solved.includes(daily)); assert.equal(progress.streak, 1);
+  assert.equal((await savePuzzle(a, daily, move, dayKey())).streak, 1);
+  await assert.rejects(savePuzzle(a, daily, { from: "a1", to: "a8" }, dayKey()));
+  assert.equal(ratingCategory(60), "bullet"); assert.equal(ratingCategory(180, 2), "blitz"); assert.equal(ratingCategory(600), "rapid");
+  console.log("Passed: profiles, unique usernames, friend consent, matchmaking, private seats, idempotent ratings, direct challenges, cancellation, and verified daily puzzle streaks.");
+} finally {
+  for (const id of rooms) {
+    await unlink(path.join(process.cwd(), ".gambit-rooms", `${id}.json`)).catch(() => {});
+    for (const user of [a, b, c]) await unlink(path.join(process.cwd(), ".gambit-history", user.id, `friend-${id}.json`)).catch(() => {});
+  }
+}

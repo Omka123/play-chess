@@ -80,6 +80,7 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
           ))}
         </div>
 
+        <label className="field-label">Increment<select value={play.increment || 0} disabled={!play.tc} onChange={(event) => onPrefs({ increment: Number(event.target.value) })}><option value={0}>None</option><option value={2}>+2 seconds per move</option><option value={5}>+5 seconds per move</option></select></label>
         <button className="btn primary start" onClick={onStart}>Start game</button>
       </div>
     );

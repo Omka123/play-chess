@@ -2,11 +2,13 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Chess } from "chess.js";
 import ChessPiece from "./ChessPiece";
 import { FILES, PIECE_NAMES } from "@/lib/constants";
 import { colorName, kingSquare } from "@/lib/chessUtil";
 import { boardPoint, moveAnimations } from "@/lib/boardMotion";
 import { arrowGeometry } from "@/lib/reviewArrows";
+import { playChessSound } from "@/lib/sounds";
 
 function SlidingPiece({ move, orient, onFinish }) {
   const ref = useRef(null);
@@ -27,7 +29,7 @@ function SlidingPiece({ move, orient, onFinish }) {
  * Presentational chess board. It owns only UI state (selection, drag, promotion picker).
  * The parent owns the game and is told about moves through `onMove(from, to, promotion)`.
  */
-export default function Board({ game, orient, lastMove, hint, canMove, myColor, onMove, arrows = [] }) {
+export default function Board({ game, orient, lastMove, hint, canMove, myColor, onMove, arrows = [], canPremove = false, onPremove, premove }) {
   const [selected, setSelected] = useState(null);
   const [promo, setPromo] = useState(null);
   const [ghost, setGhost] = useState(null);
@@ -37,6 +39,14 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
   const skipSlide = useRef(false);
   const [slides, setSlides] = useState([]);
   const fen = game.fen();
+  const previousSoundFen = useRef(fen);
+  useEffect(() => {
+    if (previousSoundFen.current !== fen) {
+      previousSoundFen.current = fen;
+      const last = game.history({ verbose: true }).at(-1);
+      if (last) playChessSound(game.isCheckmate() ? "mate" : game.isCheck() ? "check" : last.captured ? "capture" : "move");
+    }
+  }, [fen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useLayoutEffect(() => {
     const position = {};
@@ -57,19 +67,24 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
 
   const targets = useMemo(() => {
     const t = {};
-    if (selected) game.moves({ square: selected, verbose: true }).forEach((m) => { t[m.to] = true; });
+    let position = game;
+    if (!canMove && canPremove) {
+      const fields = fen.split(" "); fields[1] = myColor; fields[3] = "-";
+      try { position = new Chess(fields.join(" ")); } catch { return t; }
+    }
+    if (selected) position.moves({ square: selected, verbose: true }).forEach((m) => { t[m.to] = true; });
     return t;
-  }, [selected, game]);
+  }, [selected, game, canMove, canPremove, myColor, fen]);
 
   const attempt = (from, to) => {
-    if (!canMove || !targets[to]) { setSelected(null); return; }
+    if ((!canMove && !canPremove) || !targets[to]) { setSelected(null); return; }
     const p = game.get(from);
     if (p && p.type === "p" && ((p.color === "w" && to[1] === "8") || (p.color === "b" && to[1] === "1"))) {
-      setPromo({ from, to, color: p.color });
+      setPromo({ from, to, color: p.color, queued: !canMove });
       return;
     }
     setSelected(null);
-    onMove(from, to);
+    if (canMove) onMove(from, to); else onPremove?.(from, to);
   };
 
   // Window-level pointer handlers read the latest values through a ref.
@@ -107,7 +122,7 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
   }, []);
 
   const onDown = (e, sq) => {
-    if (!canMove || e.button > 0) return;
+    if ((!canMove && !canPremove) || e.button > 0) return;
     if (selected && targets[sq]) { attempt(selected, sq); return; }
     const p = game.get(sq);
     if (p && p.color === myColor) {
@@ -133,6 +148,7 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
       if (selected === sq) cls += " sel";
       if (checkSq === sq) cls += " chk";
       if (hint === sq) cls += " hint";
+      if (premove && (premove.from === sq || premove.to === sq)) cls += " queued";
       const label = `${p ? `${colorName(p.color)} ${PIECE_NAMES[p.type]} on ` : ""}${sq}`;
       squares.push(
         <div key={sq} className={cls} data-sq={sq} role="gridcell" aria-label={label} onPointerDown={(e) => onDown(e, sq)}>
@@ -175,7 +191,7 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
                 key={k}
                 className={promo.color}
                 aria-label={`Promote to ${PIECE_NAMES[k]}`}
-                onClick={() => { const pm = promo; setPromo(null); setSelected(null); onMove(pm.from, pm.to, k); }}
+                onClick={() => { const pm = promo; setPromo(null); setSelected(null); if (pm.queued) onPremove?.(pm.from, pm.to, k); else onMove(pm.from, pm.to, k); }}
               >
                 <ChessPiece type={k} color={promo.color} />
               </button>

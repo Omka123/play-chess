@@ -20,12 +20,13 @@ import { BOTS } from "@/lib/constants";
 import { PUZZLES, matingMoves } from "@/lib/puzzles";
 import { buildGame, capturedInfo, colorName, gameResult, tryMove } from "@/lib/chessUtil";
 import { chooseMove } from "@/lib/engine";
+import GameExport from "./GameExport";
 
 const initialPlay = {
   stage: "setup", // "setup" | "game"
   moves: [], view: 0, human: "w", orient: "w",
   active: false, over: false, result: null, thinking: false,
-  botId: 3, color: "w", tc: 0, clocks: { w: 0, b: 0 }, gameId: 0,
+  botId: 3, color: "w", tc: 0, increment: 0, clocks: { w: 0, b: 0 }, gameId: 0,
 };
 
 const sideOf = (idx) => new Chess(PUZZLES[idx].fen).turn();
@@ -38,6 +39,7 @@ export default function Gambit() {
   const { data: account } = useSession();
   const [mode, setMode] = useState("play");
   const [reviewSelection, setReviewSelection] = useState(null);
+  const [premove, setPremove] = useState(null);
   const [play, setPlay] = useState(initialPlay);
   const [puzzle, setPuzzle] = useState(() => freshPuzzle(0));
   const [solved, setSolved] = useState([]);
@@ -53,12 +55,12 @@ export default function Gambit() {
 
   /* ---------- saved settings ---------- */
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).has("room")) setMode("friends");
+    if (new URLSearchParams(window.location.search).has("room") || new URLSearchParams(window.location.search).has("online")) setMode("friends");
     try {
       const savedTheme = localStorage.getItem("gambit:theme");
       document.documentElement.dataset.theme = savedTheme === "light" ? "light" : "dark";
       const pr = JSON.parse(localStorage.getItem("gambit:prefs") || "null");
-      if (pr) setPlay((p) => ({ ...p, botId: pr.botId || p.botId, color: pr.color || p.color, tc: typeof pr.tc === "number" ? pr.tc : p.tc }));
+      if (pr) setPlay((p) => ({ ...p, botId: pr.botId || p.botId, color: pr.color || p.color, tc: typeof pr.tc === "number" ? pr.tc : p.tc, increment: [0, 2, 5].includes(pr.increment) ? pr.increment : 0 }));
       const s = JSON.parse(localStorage.getItem("gambit:solved") || "null");
       if (Array.isArray(s)) setSolved(s);
     } catch { /* storage unavailable */ }
@@ -68,9 +70,9 @@ export default function Gambit() {
     if (!loaded) return;
     try {
       localStorage.setItem("gambit:solved", JSON.stringify(solved));
-      localStorage.setItem("gambit:prefs", JSON.stringify({ botId: play.botId, color: play.color, tc: play.tc }));
+      localStorage.setItem("gambit:prefs", JSON.stringify({ botId: play.botId, color: play.color, tc: play.tc, increment: play.increment }));
     } catch { /* storage unavailable */ }
-  }, [loaded, solved, play.botId, play.color, play.tc]);
+  }, [loaded, solved, play.botId, play.color, play.tc, play.increment]);
 
   /* ---------- derived position ---------- */
   const t = mode === "play" ? play : puzzle;
@@ -125,11 +127,12 @@ export default function Gambit() {
         const over = r.game.isGameOver();
         return {
           ...p, moves, thinking: false, over, active: !over,
+          clocks: p.tc ? { ...p.clocks, [r.move.color]: p.clocks[r.move.color] + p.increment * 1000 } : p.clocks,
           view: p.view === p.moves.length ? moves.length : p.view,
           result: over ? gameResult(r.game, p.human, bot.name) : null,
         };
       });
-    }, 250);
+    }, 1400 + Math.random() * 600);
 
     return () => {
       cancelled = true;
@@ -186,13 +189,14 @@ export default function Gambit() {
 
   const onPlayMove = (from, to, promo) => {
     setPlay((p) => {
-      if (!p.active || p.over) return p;
+      if (!p.active || p.over || buildGame(undefined, p.moves).turn() !== p.human) return p;
       const r = tryMove(undefined, p.moves, from, to, promo);
       if (!r) return p;
       const moves = [...p.moves, r.move];
       const over = r.game.isGameOver();
       return {
         ...p, moves, view: moves.length, over, active: !over, thinking: false,
+        clocks: p.tc ? { ...p.clocks, [p.human]: p.clocks[p.human] + p.increment * 1000 } : p.clocks,
         result: over ? gameResult(r.game, p.human, botById(p.botId).name) : null,
       };
     });
@@ -202,6 +206,14 @@ export default function Gambit() {
     if (!p.active || p.over) return p;
     return { ...p, over: true, active: false, thinking: false, result: { title: `${botById(p.botId).name} wins`, detail: "You resigned." } };
   });
+
+  useEffect(() => {
+    if (!premove || premove.gameId !== play.gameId || !play.active || play.over || play.thinking || mode !== "play") return;
+    const position = buildGame(undefined, play.moves);
+    if (position.turn() !== play.human) return;
+    setPremove(null);
+    if (tryMove(undefined, play.moves, premove.from, premove.to, premove.promotion)) onPlayMove(premove.from, premove.to, premove.promotion);
+  }, [premove, play.gameId, play.moves.length, play.active, play.over, play.thinking, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const undo = () => setPlay((p) => {
     if (!p.active || p.over || p.thinking) return p;
@@ -338,14 +350,19 @@ export default function Gambit() {
             hint={mode === "puzzle" ? puzzle.hint : null}
             arrows={mode === "play" && play.over && reviewSelection?.gameId === play.gameId && play.view === reviewSelection.entry.ply - 1 ? reviewArrows(reviewSelection.entry, shown.fen()) : []}
             canMove={canMove}
+            canPremove={mode === "play" && play.stage === "game" && play.active && !play.over && atLatest && full.turn() !== play.human}
+            onPremove={(from, to, promotion) => setPremove({ from, to, promotion, gameId: play.gameId })}
+            premove={mode === "play" && play.active && premove?.gameId === play.gameId ? premove : null}
             myColor={myColor}
             onMove={mode === "play" ? onPlayMove : onPuzzleMove}
           />
           <PlayerBar {...barProps(bottom)} />
+          {mode === "play" && play.active && premove?.gameId === play.gameId && <button className="btn" onClick={() => setPremove(null)}>Cancel premove · {premove.from}–{premove.to}</button>}
         </section>
 
         <aside className="panel" aria-live="polite">
           {mode === "play" && play.over && <SaveBotGame key={play.historyId} play={play} userId={account?.user?.id} />}
+          {mode === "play" && play.over && <GameExport game={{ moves: play.moves, names: { [play.human]: account?.user?.name || "You", [play.human === "w" ? "b" : "w"]: botById(play.botId).name }, color: play.human, outcome: play.result.title === "Draw" ? "draw" : play.result.title === "You win" ? "win" : "loss", tc: play.tc, increment: play.increment, result: play.result }} fen={shown.fen()} />}
           {mode === "play" && play.over && <GameReview key={play.gameId} result={play.result} moves={play.moves} color={play.human} onGoto={goto}
             selectedPly={reviewSelection?.gameId === play.gameId && play.view === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
             onSelect={(entry) => setReviewSelection({ gameId: play.gameId, entry })} />}
@@ -372,6 +389,8 @@ export default function Gambit() {
               onReset={() => loadPuzzle(puzzle.idx)}
               onNext={() => loadPuzzle(puzzle.idx + 1)}
               onPrev={() => loadPuzzle(puzzle.idx - 1)}
+              onPick={loadPuzzle}
+              onProgress={(saved) => setSolved((current) => [...new Set([...current, ...saved])])}
             />
           )}
           <AdCard creative="boards" />

@@ -11,7 +11,7 @@ export default function SaveBotGame({ play, userId }) {
     setStatus("saving");
     const reason = play.result.detail.includes("resigned") ? "resign" : play.result.detail.includes("time") ? "timeout" : "board";
     fetch("/api/history", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: play.historyId, botId: play.botId, color: play.human, moves: play.moves, tc: play.tc, reason }),
+      body: JSON.stringify({ id: play.historyId, botId: play.botId, color: play.human, moves: play.moves, tc: play.tc, increment: play.increment || 0, reason }),
     }).then((response) => { if (!response.ok) throw new Error(); if (!cancelled) setStatus("saved"); })
       .catch(() => { if (!cancelled) setStatus("error"); });
     return () => { cancelled = true; };

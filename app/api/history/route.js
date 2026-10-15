@@ -19,10 +19,10 @@ export async function POST(request) {
       if (!game.isGameOver()) throw new Error();
       if (game.isCheckmate()) winner = game.turn() === "w" ? "b" : "w";
     } else if (input.reason === "resign") winner = input.color === "w" ? "b" : "w";
-    else { if (![180, 300, 600].includes(input.tc)) throw new Error(); winner = game.turn() === "w" ? "b" : "w"; }
+    else { if (![60, 180, 300, 600].includes(input.tc)) throw new Error(); winner = game.turn() === "w" ? "b" : "w"; }
     const names = { [input.color]: session.user.name, [input.color === "w" ? "b" : "w"]: bot.name };
     await saveGame(session.user.id, { id: `bot-${input.id}`, mode: "bot", names, color: input.color, moves,
-      tc: [0, 180, 300, 600].includes(input.tc) ? input.tc : 0,
+      tc: [0, 60, 180, 300, 600].includes(input.tc) ? input.tc : 0, increment: [0, 2, 5].includes(input.increment) ? input.increment : 0,
       outcome: winner ? winner === input.color ? "win" : "loss" : "draw",
       result: { title: winner ? `${names[winner]} wins` : "Draw", detail: input.reason === "resign" ? "Resignation." : input.reason === "timeout" ? "Time ran out." : game.isCheckmate() ? "Checkmate." : "Drawn position." }, finishedAt: Date.now() });
     return Response.json({ saved: true }, { headers: { "Cache-Control": "no-store" } });

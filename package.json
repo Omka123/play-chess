@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/prepare-stockfish.mjs",
+    "prebuild": "node scripts/prepare-stockfish.mjs",
     "test": "node --experimental-default-type=module tests/run.mjs",
     "dev": "node scripts/dev.mjs",
     "build": "next build",
@@ -13,6 +15,10 @@
     "next": "^15.0.0",
     "next-auth": "^4.24.15",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "stockfish": "19.0.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
   }
 }

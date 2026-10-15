@@ -12,16 +12,20 @@ import { buildGame, capturedInfo } from "@/lib/chessUtil";
 import { Nav } from "./PlayPanel";
 import { resolveFriendSession } from "@/lib/friendSession";
 import { useSession } from "next-auth/react";
+import OnlineMatchmaking from "./OnlineMatchmaking";
+import GameExport from "./GameExport";
 
 export default function Friends({ visible = true }) {
   const { data: account } = useSession();
   const [room, setRoom] = useState(null);
   const [reviewSelection, setReviewSelection] = useState(null);
+  const [premove, setPremove] = useState(null);
   const [session, setSession] = useState(null);
   const [invite, setInvite] = useState(null);
   const [name, setName] = useState("");
   const [color, setColor] = useState("w");
   const [tc, setTc] = useState(300);
+  const [increment, setIncrement] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -44,6 +48,7 @@ export default function Friends({ visible = true }) {
   const saveSession = (value) => {
     try { sessionStorage.setItem("gambit:room", JSON.stringify(value)); } catch { /* Session remains in memory. */ }
     setSession(value);
+    window.history.replaceState(null, "", `?room=${value.id}`);
   };
   const request = async (url, token, action) => {
     const response = await fetch(url, { method: action ? "POST" : "GET", cache: "no-store",
@@ -68,7 +73,8 @@ export default function Friends({ visible = true }) {
         try {
           const data = await request(`/api/rooms/${session.id}`, session.token);
           if (!cancelled && !lock.current && version === revision.current) {
-            setRoom(data); setError(""); finished = !!data.result;
+            if (data.rematchSession) { saveSession(data.rematchSession); setRoom(null); setView(null); return; }
+            setRoom((previous) => ({ ...data, moves: previous && JSON.stringify(previous.moves) === JSON.stringify(data.moves) ? previous.moves : data.moves })); setError(""); finished = false;
           }
         } catch (e) {
           if (!cancelled && version === revision.current) {
@@ -83,7 +89,7 @@ export default function Friends({ visible = true }) {
         }
       }
       // Schedule from request start; avoid adding a full delay after network latency.
-      if (!cancelled && !finished) timer = setTimeout(poll, Math.max(100, 500 - (Date.now() - started)));
+      if (!cancelled && !finished) timer = setTimeout(poll, Math.max(100, 1000 - (Date.now() - started)));
     };
     poll();
     return () => { cancelled = true; clearTimeout(timer); };
@@ -98,7 +104,7 @@ export default function Friends({ visible = true }) {
         setRoom(data); saveSession({ id: invite.id, token: data.token }); setInvite(null);
         window.history.replaceState(null, "", `?room=${invite.id}`);
       } else {
-        const data = await request("/api/rooms", null, { name, color, tc });
+        const data = await request("/api/rooms", null, { name, color, tc, increment });
         setRoom(data);
         saveSession({ id: data.id, token: data.token });
       }
@@ -119,7 +125,12 @@ export default function Friends({ visible = true }) {
         setView(null);
       } catch { lock.current = false; setBusy(false); return; }
     }
-    try { setRoom(await request(`/api/rooms/${session.id}`, session.token, action)); setView(null); }
+    try {
+      const data = await request(`/api/rooms/${session.id}`, session.token, action);
+      if (data.rematchSession) { saveSession(data.rematchSession); setRoom(null); }
+      else setRoom((current) => ({ ...data, moves: current && JSON.stringify(current.moves) === JSON.stringify(data.moves) ? current.moves : data.moves }));
+      setView(null);
+    }
     catch (e) { setRoom(previous); setError(e.message); }
     finally { lock.current = false; setBusy(false); }
   };
@@ -138,6 +149,13 @@ export default function Friends({ visible = true }) {
   const top = orient === "w" ? "b" : "w";
   const info = capturedInfo(shown);
   const active = room?.joined && !room.result;
+  useEffect(() => {
+    if (!premove || premove.roomId !== room?.id || !active || busy || lock.current || game.turn() !== room.color) return;
+    setPremove(null);
+    try { const position = buildGame(undefined, moves); position.move({ from: premove.from, to: premove.to, promotion: premove.promotion }); }
+    catch { return; }
+    act({ type: "move", from: premove.from, to: premove.to, promotion: premove.promotion, ply: moves.length });
+  }, [premove, room?.id, active, busy, moves]); // eslint-disable-line react-hooks/exhaustive-deps
   const player = (side) => ({ name: room?.names[side] || "Waiting for a friend", avatar: side.toUpperCase(),
     captured: info.lostBy[side === "w" ? "b" : "w"], diff: side === "w" ? info.diff : -info.diff,
     showClock: !!room?.tc, clock: room?.clocks[side] || 0, running: active && game.turn() === side, low: room?.clocks[side] < 20000 });
@@ -149,11 +167,16 @@ export default function Friends({ visible = true }) {
       <Board game={room ? shown : new Chess()} orient={orient} lastMove={moves[ply - 1]} myColor={room?.color}
         arrows={room?.result && reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewArrows(reviewSelection.entry, shown.fen()) : []}
         canMove={!!active && !busy && ply === moves.length && game.turn() === room.color}
+        canPremove={!!active && !busy && ply === moves.length && game.turn() !== room.color}
+        premove={active && premove?.roomId === room.id ? premove : null}
+        onPremove={(from, to, promotion) => setPremove({ from, to, promotion, roomId: room.id })}
         onMove={(from, to, promotion) => act({ type: "move", from, to, promotion, ply: moves.length })} />
       <PlayerBar {...player(orient)} />
+      {active && premove?.roomId === room.id && <button className="btn" onClick={() => setPremove(null)}>Cancel premove · {premove.from}–{premove.to}</button>}
       <p className="board-note">{room ? `You play ${room.color === "w" ? "white" : "black"}. Games expire after 24 hours.` : "A board for you. A link for your friend."}</p>
     </section>
     <aside className="panel">
+      {!session && !invite && <OnlineMatchmaking onMatch={(matched) => { setRoom(null); saveSession(matched); }} disabled={busy} />}
       {room?.result && account?.user && <p role="status">{room.historySaved === false ? "Game history could not be saved. Reload to retry before this room expires." : "Game saved to your account history."}</p>}
       {room?.result && <GameReview key={room.id} result={room.result} moves={moves} color={room.color} visible={visible} onGoto={setView}
         selectedPly={reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
@@ -166,6 +189,7 @@ export default function Friends({ visible = true }) {
           <label className="field-label" htmlFor="friend-name">Your name</label>
           <input id="friend-name" className="text-input" maxLength={30} value={name} readOnly={Boolean(account?.user)} placeholder="Enter your name" onChange={(e) => setName(e.target.value)} />
           {!invite && <>
+            <label className="field-label">Increment<select value={increment} onChange={(event) => setIncrement(Number(event.target.value))}><option value={0}>None</option><option value={2}>+2 seconds per move</option><option value={5}>+5 seconds per move</option></select></label>
             <div className="label">Your pieces</div><div className="seg">{[["w", "White"], ["r", "Random"], ["b", "Black"]].map(([value, label]) => <button key={value} aria-pressed={color === value} onClick={() => setColor(value)}>{label}</button>)}</div>
             <div className="label">Time per player</div><div className="seg">{TIMES.map((time) => <button key={time.s} aria-pressed={tc === time.s} onClick={() => setTc(time.s)}>{time.label}</button>)}</div>
           </>}
@@ -181,6 +205,12 @@ export default function Friends({ visible = true }) {
         <p className="msg bad" role="status">{error}</p>
       </div>
       {room && <div className="card">
+        {room.result && <GameExport game={{ moves, names: room.names, color: room.color, tc: room.tc, increment: room.increment, result: room.result, outcome: room.result.title === "Draw" ? "draw" : room.winner === room.color ? "win" : "loss" }} fen={shown.fen()} />}
+        <p className="sub">{room.rated ? "Rated online game" : "Unrated friend game"} · {room.tc ? `${room.tc / 60}+${room.increment || 0}` : "Unlimited"}</p>
+        {active && <div className="row"><button className="btn" disabled={busy || room.drawOffer === room.color} onClick={() => act({ type: "offerDraw" })}>{room.drawOffer === room.color ? "Draw offered" : "Offer draw"}</button>
+          {room.drawOffer && room.drawOffer !== room.color && <><button className="btn" disabled={busy} onClick={() => act({ type: "acceptDraw" })}>Accept draw</button><button className="btn" disabled={busy} onClick={() => act({ type: "declineDraw" })}>Decline draw</button></>}
+        </div>}
+        {room.result && <div className="row"><button className="btn primary" disabled={busy || room.rematchOffered} onClick={() => act({ type: "rematch" })}>{room.rematchOffered ? "Waiting for rematch…" : room.rematchRequested ? "Accept rematch" : "Request rematch"}</button><small>Rematches are unrated.</small></div>}
         <div className="label">Move history <span className="badge">{moves.length} plies</span></div>
         <div className="friend-moves">{moves.length ? moves.map((move, i) => <button key={i} className={`btn ${ply === i + 1 ? "selected-move" : ""}`} onClick={() => setView(i + 1)}>{i % 2 === 0 ? `${Math.floor(i / 2) + 1}. ` : ""}{move.san}</button>) : <p className="sub">Your opening story starts here.</p>}</div>
         <Nav view={ply} total={moves.length} onGoto={(value) => setView(value === moves.length ? null : value)} />

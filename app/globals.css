@@ -440,3 +440,21 @@ main.layout { max-width: 1080px; grid-template-columns: minmax(0, 1fr) 330px; pa
 @keyframes signin-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .signin-spinner { animation: none; } }
 @media (max-width: 650px) { .signin-layout { grid-template-columns: 1fr; margin: 0; } .signin-story { padding: 24px; } .signin-board-art, .signin-benefits { display: none; } .signin-story h2 { margin: 12px 0 8px; font-size: 26px; } .signin-story p { margin: 0; } .signin-card { padding: 28px 22px; } }
+.sq.queued::after { content: ""; position: absolute; inset: 0; background: #6574d966; box-shadow: inset 0 0 0 3px #8493ef; pointer-events: none; }
+.community-dashboard { display: grid; gap: 18px; margin: 24px 0; }
+.profile-heading { display: flex; gap: 16px; align-items: center; }
+.profile-heading h2, .profile-heading p { margin: 0; }
+.profile-avatar { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 14px; background: var(--surface-2); font-size: 44px; font-family: var(--symbols); }
+.rating-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.rating-cards .card { margin: 0; text-transform: capitalize; }
+.rating-cards strong { display: block; font-size: 30px; margin-top: 6px; }
+.social-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.social-row > span { flex: 1; min-width: 140px; }
+.social-row small { display: block; color: var(--muted); }
+.rating-chart { width: 100%; height: 140px; color: var(--accent); margin-top: 20px; }
+.review-practice { max-width: 400px; margin: 16px auto; }
+.review-practice .btn { margin-top: 12px; }
+.engine-credit { font-size: 10px; color: var(--muted); margin-top: 16px; }
+.game-export { margin: 12px 0; }
+.puzzle-progress { border-bottom: 1px solid var(--line); margin-bottom: 16px; padding-bottom: 12px; }
+.field-label select, .game-review select, .community-dashboard select { display: block; max-width: 100%; margin: 8px 0 14px; padding: 9px 12px; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; font: inherit; }

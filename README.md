@@ -67,9 +67,9 @@ Rules come from `chess.js`. The bot is a small custom engine, so it is club-leve
 
 ## Next steps toward a real chess site
 
-1. **Account features**: add editable profiles and account game history. Google sign-in and persistent account records are already supported.
+1. **Account features**: profiles, avatars, saved games, friends and ratings are available. Add account deletion and moderation tooling as the community grows.
 2. **Scale multiplayer**: add rate limiting and optionally replace polling with a WebSocket service. Shared Redis room storage is already supported.
-3. **Ratings**: store games and update Glicko-2 ratings after each result.
+3. **Ratings**: Elo ratings are implemented. Consider Glicko-2 and anti-cheat review for a larger rated pool.
 4. **Stronger bots**: load Stockfish (WASM) in the worker instead of `engine.js`.
 5. **More puzzles**: import the open Lichess puzzle database (CC0).
 
@@ -81,8 +81,39 @@ Rules come from `chess.js`. The bot is a small custom engine, so it is club-leve
 4. Production accounts use the same Upstash REST configuration as rooms. Local accounts use `.gambit-users/`. Account records do not expire with game rooms. Keep the database private. Local records are not automatically migrated to hosted storage.
 5. Restart development or redeploy, choose **Sign in with Google**, and complete Google's consent screen. A returning Google account receives the same player ID. Verify sign-out and sign-in again, then create an invite and join from a second account in another browser. Account-bound seats require both their private room token and the matching login. Signing out does not delete an account.
 
-The `/account` page shows player details and saved game history, with results, opponents, colours, clocks, dates, filters, totals, replay, and basic mistake review. Completed friend games are archived for signed-in participants; bot games started while signed in are submitted by the browser as unrated practice games. Duplicate saves are ignored. Guests can still play, but their games are not attached to an account. Matchmaking, ratings, and cross-device recovery of active games are separate features. Puzzles remain browser-local. Google credentials are required for an end-to-end OAuth test; automated tests do not contact Google.
+The `/account` page shows editable player details, avatars, friends, rating progress and saved game history, with results, opponents, colours, clocks, dates, filters, totals, replay, and Stockfish mistake review. Completed friend games are archived for signed-in participants; bot games started while signed in are submitted by the browser as unrated practice games. Duplicate saves are ignored. Guests can still play, but their games are not attached to an account. Online matchmaking and accepted direct challenges can be resumed from the account page. Google credentials are required for an end-to-end OAuth test; automated tests do not contact Google.
 
 History is stored separately from expiring rooms: in `.gambit-history/` locally and Redis hashes in hosted deployments, without a room expiry. Only the signed-in user's history is loaded by the account page. Finished friend games are archived on a successful move, resignation, or authenticated room read that detects clock expiry. Abandoned rooms with no further requests are not automatically adjudicated. Existing expired rooms and old bot games cannot be recovered. If archiving fails, reopen/reload the room before its 24-hour expiry to retry; bot games offer an explicit retry while the finished game remains open. History does not contain room tokens or invite secrets. Bot submissions are checked for legal moves, but client-reported resignation/timeout is not suitable for rated games.
 
 Provider setup reference: https://next-auth.js.org/providers/google
+
+## Online play, social accounts and ratings
+
+- Open **Friends → Play online** to queue for a rated game or resume a current one. Available players using the same clock/increment are paired, preferring the closest rating. Queue tickets expire after 30 seconds without a heartbeat. The queue needs another real signed-in player; it never silently substitutes a bot.
+- Ratings start at 1200 and use Elo with K=32. Bullet, blitz and rapid are separate. Categories use initial seconds plus 40 increments: under 180 is bullet, under 600 is blitz, otherwise rapid. Only server-created matchmaking games affect ratings. Rating settlement is atomic and idempotent. Bot games, invitation games, challenges and rematches are unrated.
+- The account page supports unique usernames, display names, six chess-piece avatars, friend requests, accepting/declining requests, online presence and direct 5-minute challenges. Challenges expire after two minutes. Status updates every 15–30 seconds while visible. Opponents' email addresses and private room credentials are never returned in friend lists.
+- Friend games support draw offers, acceptance/decline, mutual rematch requests with swapped colours, 1/3/5/10-minute clocks, and optional +2/+5-second increments. Both bots and online play support a single queued premove, highlighted on the board with a cancel button. A premove is revalidated and discarded if it is illegal when your turn arrives.
+- The shared social state uses atomic Redis compare-and-set in production and a serialized file in `.gambit-community/` locally. This initial implementation uses one shared state document; move to indexed records or a relational database for a large player pool. Clocks are adjudicated on authenticated room requests, so abandoned games need a player to reconnect before their room expires.
+
+## Analysis, puzzles, export and sounds
+
+- Stockfish 19 lite runs locally in a browser worker for post-game review, with a 400ms/depth-16 limit per position. Review includes better-move arrows and an interactive practice board. It is an engine estimate, not guaranteed perfect analysis. Basic review remains available for devices without WASM support. Analysis is available after the game, not during rated play.
+- `predev` and `prebuild` copy the engine's JS/WASM assets and GPL license into `public/engine/`. Keep both files together. Engine source and license links appear in the review panel. Stockfish.js is third-party GPL-3.0 software; see its bundled license and corresponding source link.
+- Puzzles have editorial difficulty labels, hints, a UTC daily selection, account-saved completions and a daily streak. The current six-puzzle library rotates; expanding the library is still future content work. The server checks that a submitted move really checkmates before saving progress or awarding a streak. Local guest progress remains available.
+- Completed games support PGN download and copying the displayed position's FEN. Saved games can explicitly create a public replay link from history. Anyone with that link can view the player names, result and moves. Public replay pages are marked `noindex`; unshared account history remains private.
+- Move, capture, check and checkmate sounds use the Web Audio API after a user interaction. The **Sound on/off** button saves your preference locally.
+
+## Browser verification
+
+`npm test` covers game rules, room concurrency, private sessions, account history, profiles, friend consent, matchmaking, rating idempotency, verified puzzles, rematches, increments, PGN and UCI parsing. Browser tests use Playwright and installed Microsoft Edge. Start an isolated test server in PowerShell (never point this test at a production site):
+
+```powershell
+$env:NEXTAUTH_SECRET='local-browser-test-session-key-for-chessnexa-only'
+$env:NEXTAUTH_URL='http://localhost:3100'
+$env:UPSTASH_REDIS_REST_URL=''
+$env:UPSTASH_REDIS_REST_TOKEN=''
+$env:GAMBIT_DATA_DIRECTORY=Join-Path $env:TEMP ('chessnexa-browser-' + [guid]::NewGuid().ToString())
+npm run dev -- --port 3100
+```
+
+In another terminal run `node tests/browser.mjs`. It creates temporary test sessions without using Google, and checks two-account matchmaking, premoves, draw/rematch controls, history/sharing, WASM analysis and mobile login. Stop the isolated server after testing. Normal development should use a fresh terminal so the test-only environment overrides are not reused.

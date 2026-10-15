@@ -1,4 +1,8 @@
 // Tests always use isolated local files or an in-memory Redis mock, never a live database.
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+process.env.GAMBIT_TEST_STORAGE = await mkdtemp(path.join(tmpdir(), "gambit-tests-"));
 delete process.env.UPSTASH_REDIS_REST_URL;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;
 delete process.env.VERCEL;
@@ -10,3 +14,6 @@ await import("./lessons.mjs");
 await import("./boardMotion.mjs");
 await import("./review.mjs");
 await import("./history.mjs");
+await import("./community.mjs");
+await import("./controls.mjs");
+await import("./redisCommunity.mjs");
