@@ -17,3 +17,4 @@ await import("./history.mjs");
 await import("./community.mjs");
 await import("./controls.mjs");
 await import("./redisCommunity.mjs");
+await import("./playClock.mjs");

@@ -1,0 +1,87 @@
+// Uses the isolated test server and test secret documented for tests/browser.mjs.
+import assert from "node:assert/strict";
+import { chromium } from "@playwright/test";
+import { encode } from "next-auth/jwt";
+import { Chess } from "chess.js";
+import { randomUUID } from "node:crypto";
+const origin = process.env.BROWSER_TEST_URL || "http://localhost:3100";
+const browser = await chromium.launch({ channel: "msedge", headless: true });
+const contexts = [], errors = [];
+async function player(name) {
+  const context = await browser.newContext(); contexts.push(context);
+  const token = await encode({ secret: "local-browser-test-session-key-for-chessnexa-only", token: { userId: `review-${randomUUID()}`, name, sub: name, email: `${name}@example.test` }, maxAge: 3600 });
+  await context.addCookies([{ name: "next-auth.session-token", value: token, url: origin, httpOnly: true, sameSite: "Lax" }]);
+  return context;
+}
+async function post(context, path, body, token) {
+  const response = await context.request.post(`${origin}${path}`, { headers: { Origin: origin, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, data: body });
+  const data = await response.json(); assert.ok(response.ok(), JSON.stringify(data)); return data;
+}
+try {
+  const white = await player("White"), black = await player("Black");
+  const room = await post(white, "/api/rooms", { name: "White", color: "w", tc: 0 });
+  const guest = await post(black, `/api/rooms/${room.id}`, { type: "join", name: "Black" }, room.invite);
+  const page = await white.newPage(); page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript((session) => sessionStorage.setItem("gambit:room", JSON.stringify(session)), { id: room.id, token: room.token });
+  await page.goto(`${origin}/?room=${room.id}`);
+  await page.getByRole("button", { name: "Offer draw", exact: true }).waitFor();
+  assert.equal(await page.getByRole("dialog").count(), 0);
+  const moves = [["f2", "f3"], ["e7", "e5"], ["g2", "g4"], ["d8", "h4"]];
+  for (let ply = 0; ply < 3; ply++) await post(ply % 2 ? black : white, `/api/rooms/${room.id}`, { type: "move", from: moves[ply][0], to: moves[ply][1], ply }, ply % 2 ? guest.token : room.token);
+  await page.getByRole("gridcell", { name: "White pawn on g4", exact: true }).waitFor();
+  assert.equal(await page.getByRole("dialog").count(), 0);
+  await post(black, `/api/rooms/${room.id}`, { type: "move", from: "d8", to: "h4", ply: 3 }, guest.token);
+  await page.getByRole("dialog").waitFor();
+  await page.getByRole("heading", { name: "You Lost", exact: true }).waitFor();
+  await page.waitForFunction(() => [...document.querySelectorAll(".result-quality strong")].every((element) => !element.textContent.includes("—")));
+  assert.equal(await page.locator('[data-sq="h4"]:visible').getAttribute("aria-label"), "Black queen on h4");
+  assert.equal(await page.locator(".review-arrows:visible").count(), 0);
+  const winnerPage = await black.newPage(); winnerPage.on("pageerror", (error) => errors.push(error.message));
+  await winnerPage.addInitScript((session) => sessionStorage.setItem("gambit:room", JSON.stringify(session)), { id: room.id, token: guest.token });
+  await winnerPage.goto(`${origin}/?room=${room.id}`);
+  await winnerPage.getByRole("heading", { name: /You Won!/ }).waitFor();
+  await winnerPage.setViewportSize({ width: 390, height: 844 });
+  await winnerPage.waitForFunction(() => [...document.querySelectorAll(".result-quality strong")].every((element) => !element.textContent.includes("—")), { timeout: 45000 });
+  const summary = await winnerPage.locator(".result-quality strong").allTextContents();
+  assert.equal(summary.reduce((sum, value) => sum + Number(value.match(/\d+/)?.[0] || 0), 0), 2);
+  const popup = await winnerPage.getByRole("dialog").boundingBox();
+  assert.ok(popup.width <= 390 && popup.x >= 0);
+  if (process.env.RESULT_SCREENSHOT) await winnerPage.getByRole("dialog").screenshot({ path: process.env.RESULT_SCREENSHOT });
+  await winnerPage.getByRole("button", { name: "Back to board", exact: true }).click();
+  await page.getByRole("button", { name: "Game Review", exact: true }).click();
+  await page.getByRole("button", { name: "Move 2 g4, Blunder", exact: true }).waitFor({ timeout: 45000 });
+  await page.getByRole("button", { name: "Move 2 g4, Blunder", exact: true }).click();
+  assert.equal(await page.locator(".review-arrows:visible .board-arrow").count(), 2);
+  assert.equal(await page.locator(".review-square-badge.mistake:visible").textContent(), "??");
+  assert.match(await page.locator(".review-moment").textContent(), /forced checkmate/);
+  assert.match(await page.locator(".review-move-comparison").textContent(), /M/);
+  const toggles = page.getByRole("group", { name: "Review arrows" });
+  await toggles.getByRole("button", { name: "Better move", exact: true }).click();
+  assert.equal(await page.locator(".review-arrows:visible .board-arrow").count(), 1);
+  assert.equal(await page.locator(".review-arrows:visible .board-arrow.best").count(), 1);
+  await toggles.getByRole("button", { name: "Your move", exact: true }).click();
+  assert.equal(await page.locator(".review-arrows:visible .board-arrow.mistake").count(), 1);
+  const san = await page.locator(".review-best-move strong").textContent();
+  const before = new Chess(); before.move("f3"); before.move("e5"); const correct = before.move(san);
+  await page.getByRole("button", { name: "Try the better move", exact: true }).click();
+  const practice = page.locator(".review-practice");
+  await practice.locator(`[data-sq="${correct.from}"]`).click(); await practice.locator(`[data-sq="${correct.to}"]`).click();
+  await practice.getByText(/Well played!/).waitFor();
+  await page.getByRole("combobox", { name: "Analysis engine" }).selectOption("basic");
+  await page.getByRole("button", { name: "Move 2 g4, Blunder", exact: true }).waitFor({ timeout: 15000 });
+  assert.equal(await page.locator(".review-practice").count(), 0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  const botPage = await white.newPage(); botPage.on("pageerror", (error) => errors.push(error.message));
+  await botPage.addInitScript(() => { sessionStorage.removeItem("gambit:room"); localStorage.setItem("gambit:prefs", JSON.stringify({ botId: 1, color: "w", tc: 180 })); });
+  await botPage.goto(origin);
+  await botPage.getByRole("button", { name: "Start game", exact: true }).click();
+  await botPage.locator('[data-sq="e2"]:visible').click(); await botPage.locator('[data-sq="e4"]:visible').click();
+  await botPage.getByRole("button", { name: "Undo", exact: true }).waitFor({ state: "visible" });
+  await botPage.waitForFunction(() => [...document.querySelectorAll("main:not([hidden]) .moves button")].length >= 2);
+  await botPage.locator('[data-sq="g1"]:visible').click(); await botPage.locator('[data-sq="f3"]:visible').click();
+  assert.equal(await botPage.getByRole("dialog").count(), 0);
+  assert.ok((await botPage.locator("main:not([hidden]) .clock").allTextContents()).every((value) => !value.includes("NaN")));
+  assert.deepEqual(errors, []);
+  console.log("Passed review browser: no popup during active games, final board retained behind results, review only on request, timed bot play, mate detection, badges, arrow toggles, practice and mobile layout.");
+} finally { for (const context of contexts) await context.close(); await browser.close(); }

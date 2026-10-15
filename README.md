@@ -117,3 +117,5 @@ npm run dev -- --port 3100
 ```
 
 In another terminal run `node tests/browser.mjs`. It creates temporary test sessions without using Google, and checks two-account matchmaking, premoves, draw/rematch controls, history/sharing, WASM analysis and mobile login. Stop the isolated server after testing. Normal development should use a fresh terminal so the test-only environment overrides are not reused.
+
+Run `node tests/reviewBrowser.mjs` against the same isolated server to check a completed checkmate game's review: Stockfish mate detection, automatic key-moment selection, move badges, played/best arrow filters, interactive better-move practice, engine switching and the mobile layout. Reviews cache the latest ten analysed games in page memory; analysis is an estimate at the selected engine's search limit, not Chess.com's proprietary move classification or accuracy score.

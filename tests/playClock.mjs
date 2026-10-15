@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import { clockAfterMove, tickPlayClock } from "../lib/playClock.js";
+const play = { tc: 180, increment: undefined, moves: [{}, {}], clocks: { w: 180000, b: 180000 } };
+assert.equal(clockAfterMove(play, "w").w, 180000);
+assert.equal(clockAfterMove({ ...play, increment: 2 }, "w").w, 182000);
+assert.equal(clockAfterMove({ ...play, clocks: { w: NaN, b: 180000 } }, "w").w, 180000);
+assert.equal(tickPlayClock(play, 200).expired, false);
+assert.equal(tickPlayClock(play, 200).clocks.w, 179800);
+assert.equal(tickPlayClock({ ...play, clocks: { w: NaN, b: 180000 } }, 200).expired, false);
+assert.equal(tickPlayClock({ ...play, clocks: { w: 100, b: 180000 } }, 200).expired, true);
+assert.equal(tickPlayClock({ ...play, tc: 0 }, 1000000), null);
+assert.equal(tickPlayClock(play, NaN), null);
+console.log("Passed: finite clocks, old missing increments, invalid clock recovery, real timeout and untimed games.");

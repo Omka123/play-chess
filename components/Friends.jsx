@@ -165,6 +165,7 @@ export default function Friends({ visible = true }) {
     <section className="stage" aria-label="Online chess board">
       <PlayerBar {...player(top)} />
       <Board game={room ? shown : new Chess()} orient={orient} lastMove={moves[ply - 1]} myColor={room?.color}
+        winner={room?.result && ply === moves.length ? room.winner : null}
         arrows={room?.result && reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewArrows(reviewSelection.entry, shown.fen()) : []}
         canMove={!!active && !busy && ply === moves.length && game.turn() === room.color}
         canPremove={!!active && !busy && ply === moves.length && game.turn() !== room.color}
@@ -179,8 +180,10 @@ export default function Friends({ visible = true }) {
       {!session && !invite && <OnlineMatchmaking onMatch={(matched) => { setRoom(null); saveSession(matched); }} disabled={busy} />}
       {room?.result && account?.user && <p role="status">{room.historySaved === false ? "Game history could not be saved. Reload to retry before this room expires." : "Game saved to your account history."}</p>}
       {room?.result && <GameReview key={room.id} result={room.result} moves={moves} color={room.color} visible={visible} onGoto={setView}
+        outcome={room.result.title === "Draw" ? "draw" : room.winner === room.color ? "win" : "loss"}
+        rated={room.rated} gameId={room.id} onNewGame={reset} onRematch={() => act({ type: "rematch" })} rematchPending={room.rematchOffered} actionsBusy={busy} clockLabel={room.tc ? `${room.tc / 60} + ${room.increment || 0}` : "game"}
         selectedPly={reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
-        onSelect={(entry) => setReviewSelection({ roomId: room.id, entry })} />}
+        onSelect={(entry) => setReviewSelection(entry ? { roomId: room.id, entry } : null)} />}
       <div className="card">
         <span className="eyebrow">PLAY TOGETHER</span>
         <h2>{session ? room?.result?.title || (room?.joined ? (game.turn() === room.color ? "Your move" : "Your friend’s move") : "Waiting for your friend") : invite ? "You’re invited" : "Chess is better with friends"}</h2>

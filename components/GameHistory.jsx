@@ -26,11 +26,11 @@ export default function GameHistory({ games }) {
     </tbody></table></div>}
     {filtered.length > 20 && <div className="row"><button className="btn" disabled={!page} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page + 1}</span><button className="btn" disabled={(page + 1) * 20 >= filtered.length} onClick={() => setPage(page + 1)}>Next</button></div>}
     {selected && <div className="history-replay"><h3>{selected.names.w} vs {selected.names.b}</h3><p>{selected.result.title} · {selected.result.detail}</p>
-      <div className="history-board"><Board game={shown} orient={selected.color} lastMove={selected.moves[view - 1]} canMove={false} arrows={entry?.ply - 1 === view ? reviewArrows(entry, shown.fen()) : []} /></div>
+      <div className="history-board"><Board game={shown} orient={selected.color} lastMove={selected.moves[view - 1]} canMove={false} winner={view === selected.moves.length && selected.outcome !== "draw" ? selected.outcome === "win" ? selected.color : selected.color === "w" ? "b" : "w" : null} arrows={entry?.ply - 1 === view ? reviewArrows(entry, shown.fen()) : []} /></div>
       <Nav view={view} total={selected.moves.length} onGoto={setView} />
       <GameExport game={selected} fen={shown.fen()} shareable />
       <div className="friend-moves">{selected.moves.map((move, index) => <button className="btn" key={index} onClick={() => setView(index + 1)}>{index % 2 === 0 ? `${Math.floor(index / 2) + 1}. ` : ""}{move.san}</button>)}</div>
-      <GameReview key={selected.id} result={selected.result} moves={selected.moves} color={selected.color} visible={false} onGoto={setView} onSelect={setEntry} selectedPly={entry?.ply - 1 === view ? entry.ply : null} />
+      <GameReview key={selected.id} result={selected.result} moves={selected.moves} color={selected.color} outcome={selected.outcome} visible={false} onGoto={setView} onSelect={setEntry} selectedPly={entry?.ply - 1 === view ? entry.ply : null} />
       <button className="btn" onClick={() => setSelected(null)}>Close replay</button>
     </div>}
   </section>;

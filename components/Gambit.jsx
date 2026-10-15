@@ -21,6 +21,7 @@ import { PUZZLES, matingMoves } from "@/lib/puzzles";
 import { buildGame, capturedInfo, colorName, gameResult, tryMove } from "@/lib/chessUtil";
 import { chooseMove } from "@/lib/engine";
 import GameExport from "./GameExport";
+import { clockAfterMove, tickPlayClock } from "@/lib/playClock";
 
 const initialPlay = {
   stage: "setup", // "setup" | "game"
@@ -49,7 +50,7 @@ export default function Gambit() {
   const modeRef = useRef(mode);
   const workerRef = useRef(null);
   const reqId = useRef(0);
-  const lastTick = useRef(Date.now());
+  const lastTick = useRef(null);
   playRef.current = play;
   modeRef.current = mode;
 
@@ -127,7 +128,7 @@ export default function Gambit() {
         const over = r.game.isGameOver();
         return {
           ...p, moves, thinking: false, over, active: !over,
-          clocks: p.tc ? { ...p.clocks, [r.move.color]: p.clocks[r.move.color] + p.increment * 1000 } : p.clocks,
+          clocks: clockAfterMove(p, r.move.color),
           view: p.view === p.moves.length ? moves.length : p.view,
           result: over ? gameResult(r.game, p.human, bot.name) : null,
         };
@@ -144,17 +145,17 @@ export default function Gambit() {
   /* ---------- clocks ---------- */
   useEffect(() => {
     const id = setInterval(() => {
-      const now = Date.now();
-      const dt = now - lastTick.current;
+      const now = performance.now();
+      const dt = lastTick.current === null ? 0 : now - lastTick.current;
       lastTick.current = now;
       const p = playRef.current;
       if (modeRef.current !== "play" || p.stage !== "game" || !p.active || p.over || !p.tc || p.moves.length < 2) return;
-      const turn = p.moves.length % 2 === 0 ? "w" : "b";
       setPlay((q) => {
-        if (!q.active || q.over) return q;
-        const clocks = { ...q.clocks, [turn]: q.clocks[turn] - dt };
-        if (clocks[turn] > 0) return { ...q, clocks };
-        clocks[turn] = 0;
+        if (!q.active || q.over || q.gameId !== p.gameId || q.moves.length !== p.moves.length) return q;
+        const tick = tickPlayClock(q, dt);
+        if (!tick) return q;
+        const { clocks, turn, expired } = tick;
+        if (!expired) return { ...q, clocks };
         const bot = botById(q.botId);
         return {
           ...q, clocks, over: true, active: false, thinking: false,
@@ -173,7 +174,7 @@ export default function Gambit() {
     let color = p.color;
     if (swap) color = p.human === "w" ? "b" : "w";
     else if (color === "r") color = Math.random() < 0.5 ? "w" : "b";
-    lastTick.current = Date.now();
+    lastTick.current = performance.now();
     setPlay({
       ...p, stage: "game", moves: [], view: 0, human: color, orient: color,
       historyId: crypto.randomUUID(), historyUserId: account?.user?.id || null,
@@ -184,7 +185,7 @@ export default function Gambit() {
 
   const newGameSetup = () => {
     killWorker();
-    setPlay((p) => ({ ...initialPlay, botId: p.botId, color: p.color, tc: p.tc, gameId: p.gameId + 1 }));
+    setPlay((p) => ({ ...initialPlay, botId: p.botId, color: p.color, tc: p.tc, increment: p.increment, gameId: p.gameId + 1 }));
   };
 
   const onPlayMove = (from, to, promo) => {
@@ -196,7 +197,7 @@ export default function Gambit() {
       const over = r.game.isGameOver();
       return {
         ...p, moves, view: moves.length, over, active: !over, thinking: false,
-        clocks: p.tc ? { ...p.clocks, [p.human]: p.clocks[p.human] + p.increment * 1000 } : p.clocks,
+        clocks: clockAfterMove(p, p.human),
         result: over ? gameResult(r.game, p.human, botById(p.botId).name) : null,
       };
     });
@@ -345,6 +346,7 @@ export default function Gambit() {
           <Board
             key={mode}
             game={shown}
+            winner={mode === "play" && play.over && atLatest && play.result.title !== "Draw" ? play.result.title === "You win" ? play.human : play.human === "w" ? "b" : "w" : null}
             orient={t.orient}
             lastMove={lastMove}
             hint={mode === "puzzle" ? puzzle.hint : null}
@@ -364,8 +366,10 @@ export default function Gambit() {
           {mode === "play" && play.over && <SaveBotGame key={play.historyId} play={play} userId={account?.user?.id} />}
           {mode === "play" && play.over && <GameExport game={{ moves: play.moves, names: { [play.human]: account?.user?.name || "You", [play.human === "w" ? "b" : "w"]: botById(play.botId).name }, color: play.human, outcome: play.result.title === "Draw" ? "draw" : play.result.title === "You win" ? "win" : "loss", tc: play.tc, increment: play.increment, result: play.result }} fen={shown.fen()} />}
           {mode === "play" && play.over && <GameReview key={play.gameId} result={play.result} moves={play.moves} color={play.human} onGoto={goto}
+            outcome={play.result.title === "Draw" ? "draw" : play.result.title === "You win" ? "win" : "loss"}
+            onNewGame={newGameSetup} onRematch={() => startGame(play.color !== "r")} clockLabel={play.tc ? `${play.tc / 60} + ${play.increment || 0}` : "game"}
             selectedPly={reviewSelection?.gameId === play.gameId && play.view === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
-            onSelect={(entry) => setReviewSelection({ gameId: play.gameId, entry })} />}
+            onSelect={(entry) => setReviewSelection(entry ? { gameId: play.gameId, entry } : null)} />}
           {mode === "play" ? (
             <PlayPanel
               play={play}
