@@ -12,5 +12,6 @@ export default function SharedReplay({ game }) {
     <Nav view={view} total={game.moves.length} onGoto={setView} />
     <div className="friend-moves">{game.moves.map((move, index) => <button className="btn" key={index} onClick={() => setView(index + 1)}>{index % 2 === 0 ? `${Math.floor(index / 2) + 1}. ` : ""}{move.san}</button>)}</div>
     <GameExport game={game} fen={shown.fen()} />
+    <p><a href={`/report?type=replay&target=${game.id}`}>Report this shared replay</a></p>
   </>;
 }

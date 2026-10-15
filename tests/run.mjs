@@ -18,3 +18,5 @@ await import("./community.mjs");
 await import("./controls.mjs");
 await import("./redisCommunity.mjs");
 await import("./playClock.mjs");
+await import("./moderation.mjs");
+await import("./sponsor.mjs");

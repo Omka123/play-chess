@@ -6,6 +6,7 @@ import { buildGame } from "@/lib/chessUtil";
 import GameReview from "./GameReview";
 import { reviewArrows } from "@/lib/reviewArrows";
 import GameExport from "./GameExport";
+import ColorIcon from "./ColorIcon";
 
 export default function GameHistory({ games }) {
   const [selected, setSelected] = useState(null);
@@ -17,7 +18,7 @@ export default function GameHistory({ games }) {
   const filtered = games.filter((game) => filter === "all" || game.mode === filter);
   const wins = games.filter((game) => game.outcome === "win").length;
   const losses = games.filter((game) => game.outcome === "loss").length;
-  return <section className="game-history"><h2>Game history</h2>
+  return <section className="game-history"><h2><ColorIcon name="history" />Game history</h2>
     <p>{games.length} games · {wins} wins · {losses} losses · {games.length - wins - losses} draws</p>
     <p className="sub">Online matchmaking games are rated. Bot and direct friend games are unrated.</p>
     <label>Show games <select value={filter} onChange={(event) => { setFilter(event.target.value); setPage(0); }}><option value="all">All games</option><option value="friend">Friends</option><option value="bot">Computer</option></select></label>

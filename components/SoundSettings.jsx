@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { configureSound, unlockSound } from "@/lib/sounds";
+import ColorIcon from "./ColorIcon";
 export default function SoundSettings() {
   const [enabled, setEnabled] = useState(true);
   useEffect(() => {
@@ -12,5 +13,5 @@ export default function SoundSettings() {
   return <button className="btn sound-toggle" aria-pressed={enabled} aria-label={enabled ? "Mute game sounds" : "Enable game sounds"} onClick={() => {
     const next = !enabled; setEnabled(next); configureSound(next); if (next) unlockSound();
     try { localStorage.setItem("gambit:sound", next ? "on" : "off"); } catch { /* Keep preference for this page. */ }
-  }}>Sound {enabled ? "on" : "off"}</button>;
+  }}><ColorIcon name={enabled ? "sound" : "mute"} />Sound {enabled ? "on" : "off"}</button>;
 }

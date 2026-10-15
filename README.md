@@ -28,7 +28,7 @@ REST API reference: https://upstash.com/docs/redis/features/restapi
 
 ## Content and AdSense review preparation
 
-The public site includes a learning hub, four original chess guides, three interactive exercises, and About, Contact, Privacy and Terms pages. Sample ad cards are retained in source for future customization but removed from visitor pages. No live AdSense script is installed and no approval is guaranteed.
+The public site includes a learning hub, ten original chess guides, interactive exercises, and About, Contact, Privacy and Terms pages. Cards shown during games are unpaid links to relevant ChessNexa guides. Learning pages can show an optional, clearly labelled direct sponsor card. No live AdSense script is installed and no approval or earnings are guaranteed.
 
 Before publishing for review, set `SITE_URL` to your public HTTPS origin, `SITE_OPERATOR` to your real public operator name, and `SUPPORT_EMAIL` to a monitored public contact address. Redeploy after configuring them. `SITE_URL` supplies the sitemap and homepage canonical URL; without it, the sitemap intentionally has no invented domain. Review all editorial and policy text for accuracy against your deployment.
 
@@ -117,5 +117,23 @@ npm run dev -- --port 3100
 ```
 
 In another terminal run `node tests/browser.mjs`. It creates temporary test sessions without using Google, and checks two-account matchmaking, premoves, draw/rematch controls, history/sharing, WASM analysis and mobile login. Stop the isolated server after testing. Normal development should use a fresh terminal so the test-only environment overrides are not reused.
+
+## Sponsorship configuration
+
+Set `SPONSOR_NAME`, `SPONSOR_TITLE`, `SPONSOR_TEXT` and `SPONSOR_URL` in your server environment, then restart locally or rebuild/redeploy. All four are required; the URL must be HTTPS and cannot contain a username/password. The placement appears after learning content and is labelled **Advertisement / Sponsored by …**, with `rel="sponsored noopener noreferrer"` on the outbound link. No third-party script or ad-network account is used. Empty settings show a first-party learning recommendation instead. The old sample creatives in `lib/ads.js` are not rendered.
+
+Publish a real `SUPPORT_EMAIL` to receive enquiries from `/advertise`. Agree commercial terms with an advertiser before enabling their placement, and review the destination and claims. Adding content supports a useful site; it does not guarantee AdSense approval or income. Google's own preparation guidance is https://support.google.com/adsense/answer/7299563. If you add an advertising network later, complete its setup and update consent/privacy disclosures for that actual integration.
+
+## Moderation setup
+
+Set `MODERATOR_EMAILS` to a comma-separated allowlist of the Google account emails authorised to moderate, then restart/redeploy. Leave it empty to disable access. After signing in, an authorised operator can open `/moderation` directly or use the link on `/account`. Moderator permission is checked on the server for both reads and writes; editing profile fields or sending a client-side role flag does not grant access. Never use a `NEXT_PUBLIC_` prefix for the allowlist.
+
+- `/report` accepts player, participated-game and public-replay reports from signed-in accounts, including suspended accounts requesting review. It limits each account to five reports per day and deduplicates open reports for the same target. Game evidence is checked against server records or the reporter's saved history; room tokens and invite secrets are omitted.
+- Moderators can resolve/dismiss reports, suspend/restore accounts, reset public names/avatars, and hide/restore public replay links. Each action needs a reason and creates an audit entry. Moderator accounts cannot be suspended or reset through this dashboard.
+- Suspensions immediately block authenticated matchmaking, game creation/joining/moves/rematches, friend interactions, puzzle submissions and new replay sharing. Existing session cookies do not bypass this check. Players can view their account, read their game, resign, submit reports or contact support. Guest practice is not an identity-based ban; this is account moderation, not IP/device enforcement.
+- Shared replay ownership is kept privately for moderation. Hiding a link does not delete the user's private game history. A profile reset applies immediately to new online games; older game records retain their historical names and can be reported separately.
+- Reports, decisions, private replay-owner associations and audit records use the existing community store. The dashboard displays the latest 100 audit entries, while the stored log is retained. Configure operator retention and respond to deletion/appeal requests through the published support contact. No automated cheating detector or rating penalty is claimed.
+
+`npm test` includes allowlist boundaries, role-forgery denial, report privacy, participant checks, suspension enforcement, profile resets and replay hide/restore tests. For an isolated browser moderation test, add `$env:MODERATOR_EMAILS='moderator@example.test'` to the temporary server setup above and run `node tests/moderationBrowser.mjs`.
 
 Run `node tests/reviewBrowser.mjs` against the same isolated server to check a completed checkmate game's review: Stockfish mate detection, automatic key-moment selection, move badges, played/best arrow filters, interactive better-move practice, engine switching and the mobile layout. Reviews cache the latest ten analysed games in page memory; analysis is an estimate at the selected engine's search limit, not Chess.com's proprietary move classification or accuracy score.

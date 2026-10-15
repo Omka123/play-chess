@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import ColorIcon from "./ColorIcon";
 
 export default function OnlineMatchmaking({ onMatch, disabled }) {
   const { data: account } = useSession();
@@ -32,7 +33,7 @@ export default function OnlineMatchmaking({ onMatch, disabled }) {
     poll();
     return () => { cancelled = true; clearTimeout(timer); };
   }, [searching, tc, increment]);
-  return <div className="card online-matchmaking"><span className="eyebrow">FIND YOUR OPPONENT</span><h2>Play online</h2><p className="sub">Rated bullet, blitz and rapid. Matches pair available players using the same clock, preferring nearby ratings.</p>
+  return <div className="card online-matchmaking"><span className="eyebrow">FIND YOUR OPPONENT</span><h2><ColorIcon name="friends" />Play online</h2><p className="sub">Rated bullet, blitz and rapid. Matches pair available players using the same clock, preferring nearby ratings.</p>
     {!account?.user ? <Link className="btn primary" href="/login">Sign in to play online</Link> : <>
       <div className="seg">{[[60, "1 min"], [180, "3 min"], [300, "5 min"], [600, "10 min"]].map(([value, label]) => <button key={value} disabled={searching} aria-pressed={tc === value} onClick={() => setTc(value)}>{label}</button>)}</div>
       <label className="field-label">Increment <select disabled={searching} value={increment} onChange={(event) => setIncrement(Number(event.target.value))}><option value={0}>None</option><option value={2}>+2 seconds</option><option value={5}>+5 seconds</option></select></label>

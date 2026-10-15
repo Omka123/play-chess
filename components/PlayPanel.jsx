@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { BOTS, TIMES } from "@/lib/constants";
+import ColorIcon from "./ColorIcon";
 
 function MoveList({ moves, view, onGoto }) {
   const ref = useRef(null);
@@ -41,13 +42,13 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
 
   if (play.stage === "setup") {
     return (
-      <div className="card">
+      <div className="card play-setup">
         <h2>Play Computer</h2>
         <p className="sub">Open Play with Bot to choose your opponent.</p>
 
         <details className="bot-category">
           <summary>
-            <span className="bot-category-icon" aria-hidden="true">♟</span>
+            <span className="bot-category-icon" aria-hidden="true"><ColorIcon name="bot" size={30} /></span>
             <span><strong>Play with Bot</strong><small>{BOTS.length} bots · Selected: {bot.name}</small></span>
             <span className="bot-category-arrow" aria-hidden="true">›</span>
           </summary>
@@ -66,22 +67,24 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
         </div>
         </details>
 
-        <div className="label">You play</div>
-        <div className="seg">
+        <fieldset className="setup-field"><legend>You play</legend>
+        <div className="seg setup-colors">
           {[["w", "White"], ["r", "Random"], ["b", "Black"]].map(([v, l]) => (
             <button key={v} aria-pressed={play.color === v} onClick={() => onPrefs({ color: v })}>{l}</button>
           ))}
         </div>
+        </fieldset>
 
-        <div className="label">Clock</div>
-        <div className="seg">
+        <fieldset className="setup-field"><legend>Clock</legend>
+        <div className="seg setup-clocks">
           {TIMES.map((t) => (
             <button key={t.s} aria-pressed={play.tc === t.s} onClick={() => onPrefs({ tc: t.s })}>{t.label}</button>
           ))}
         </div>
+        </fieldset>
 
-        <label className="field-label">Increment<select value={play.increment || 0} disabled={!play.tc} onChange={(event) => onPrefs({ increment: Number(event.target.value) })}><option value={0}>None</option><option value={2}>+2 seconds per move</option><option value={5}>+5 seconds per move</option></select></label>
-        <button className="btn primary start" onClick={onStart}>Start game</button>
+        <label className="field-label setup-increment">Increment<select value={play.increment || 0} disabled={!play.tc} onChange={(event) => onPrefs({ increment: Number(event.target.value) })}><option value={0}>None</option><option value={2}>+2 seconds per move</option><option value={5}>+5 seconds per move</option></select></label>
+        <button className="btn primary start" onClick={onStart}><ColorIcon name="play" />Start game</button>
       </div>
     );
   }
@@ -104,9 +107,9 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
         <MoveList moves={play.moves} view={play.view} onGoto={onGoto} />
         <Nav view={play.view} total={play.moves.length} onGoto={onGoto} />
         <div className="row first">
-          <button className="btn" onClick={onFlip}>Flip board</button>
-          {!play.over && <button className="btn" disabled={play.thinking} onClick={onUndo}>Undo</button>}
-          {!play.over && <button className="btn danger" onClick={onResign}>Resign</button>}
+          <button className="btn" onClick={onFlip}><ColorIcon name="flip" />Flip board</button>
+          {!play.over && <button className="btn" disabled={play.thinking} onClick={onUndo}><ColorIcon name="undo" />Undo</button>}
+          {!play.over && <button className="btn danger" onClick={onResign}><ColorIcon name="flag" />Resign</button>}
         </div>
         {play.over && (
           <div className="row"><button className="btn primary" onClick={onRematch}>Rematch</button></div>

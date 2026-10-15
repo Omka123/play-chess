@@ -44,6 +44,7 @@ export default function CommunityDashboard() {
   return <section className="community-dashboard" aria-label="Player profile and friends">
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
     {!data ? <p>Loading profile…</p> : <>
+      {data.profile.suspended && <div className="card suspension-notice" role="alert"><strong>Your account is suspended from online play and community actions.</strong><p>{data.profile.suspensionReason}</p><a href="/contact">Contact the operator to appeal</a></div>}
       <div className="profile-heading"><span className="profile-avatar" aria-hidden="true">{avatars[data.profile.avatar]}</span><div><h2>{data.profile.name}</h2><p>@{data.profile.username}</p></div></div>
       <div className="rating-cards">{Object.entries(data.profile.ratings).map(([name, rating]) => <div className="card" key={name}><span>{name}</span><strong>{rating}</strong></div>)}</div>
       <p className="sub">{data.profile.ratedCount} rated games · Elo ratings start at 1200. Computer and direct friend games are unrated.</p>

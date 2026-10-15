@@ -21,6 +21,7 @@ import { PUZZLES, matingMoves } from "@/lib/puzzles";
 import { buildGame, capturedInfo, colorName, gameResult, tryMove } from "@/lib/chessUtil";
 import { chooseMove } from "@/lib/engine";
 import GameExport from "./GameExport";
+import ColorIcon from "./ColorIcon";
 import { clockAfterMove, tickPlayClock } from "@/lib/playClock";
 
 const initialPlay = {
@@ -320,16 +321,16 @@ export default function Gambit() {
     <>
       <header className="top">
         <div className="brand">
-          <span className="mark" aria-hidden="true">{"\u265E\uFE0E"}</span>
+          <span className="mark" aria-hidden="true"><ColorIcon name="knight" size={36} /></span>
           ChessNexa
         </div>
         <nav className="tabs" role="tablist" aria-label="Modes">
-          <button role="tab" aria-selected={mode === "play"} onClick={() => setMode("play")}><span className="nav-icon" aria-hidden="true">♟</span>Play<span className="nav-detail">Challenge a computer</span></button>
-          <button role="tab" aria-selected={mode === "friends"} onClick={() => setMode("friends")}><span className="nav-icon" aria-hidden="true">♞</span>Friends<span className="nav-detail">Invite & play online</span></button>
-          <button role="tab" aria-selected={mode === "puzzle"} onClick={() => setMode("puzzle")}><span className="nav-icon" aria-hidden="true">◆</span>Puzzles<span className="nav-detail">Train your tactics</span></button>
+          <button role="tab" aria-selected={mode === "play"} onClick={() => setMode("play")}><span className="nav-icon"><ColorIcon name="play" size={29} /></span>Play<span className="nav-detail">Challenge a computer</span></button>
+          <button role="tab" aria-selected={mode === "friends"} onClick={() => setMode("friends")}><span className="nav-icon"><ColorIcon name="friends" size={29} /></span>Friends<span className="nav-detail">Invite & play online</span></button>
+          <button role="tab" aria-selected={mode === "puzzle"} onClick={() => setMode("puzzle")}><span className="nav-icon"><ColorIcon name="puzzle" size={29} /></span>Puzzles<span className="nav-detail">Train your tactics</span></button>
         </nav>
-        <Link href={account?.user ? "/account" : "/login"} className="sidebar-history"><span className="nav-icon" aria-hidden="true">↺</span>Game history<span className="nav-detail">Review your past games</span></Link>
-        <Link href="/learn" className="sidebar-learn">Learn chess <span aria-hidden="true">→</span></Link>
+        <Link href={account?.user ? "/account" : "/login"} className="sidebar-history"><span className="nav-icon"><ColorIcon name="history" size={29} /></span>Game history<span className="nav-detail">Review your past games</span></Link>
+        <Link href="/learn" className="sidebar-learn"><ColorIcon name="learn" />Learn chess <span aria-hidden="true">→</span></Link>
         <button className="theme-btn" onClick={toggleTheme} aria-label="Toggle light and dark theme" title="Toggle theme">&#9680;</button>
       </header>
 

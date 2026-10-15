@@ -12,7 +12,7 @@ export default function LessonExercise({ challenge }) {
     const next = new Chess(challenge.fen);
     let played;
     try { played = next.move({ from, to, promotion: promotion || "q" }); } catch { return; }
-    if (challenge.mate ? next.isCheckmate() : challenge.moves.includes(from + to)) {
+    if (challenge.mate ? next.isCheckmate() : challenge.moves.includes(from + to + (played.promotion || ""))) {
       setGame(next); setLast(played); setDone(true); setMessage(challenge.success);
     } else setMessage("That move is legal, but it does not solve this exercise. Check the goal and try another move.");
   };

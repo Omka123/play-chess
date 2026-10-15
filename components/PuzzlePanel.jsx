@@ -4,6 +4,7 @@ import { PUZZLES } from "@/lib/puzzles";
 import { colorName } from "@/lib/chessUtil";
 import { useState } from "react";
 import PuzzleProgress from "./PuzzleProgress";
+import ColorIcon from "./ColorIcon";
 
 export default function PuzzlePanel({ puzzle, side, solved, onHint, onReset, onNext, onPrev, onPick, onProgress }) {
   const [difficulty, setDifficulty] = useState("All");
@@ -12,7 +13,7 @@ export default function PuzzlePanel({ puzzle, side, solved, onHint, onReset, onN
   const pz = PUZZLES[puzzle.idx];
   return (
     <div className="card">
-      <h2>Mate in one</h2>
+      <h2><ColorIcon name="puzzle" />Mate in one</h2>
       <PuzzleProgress puzzle={puzzle} onPick={onPick} onProgress={onProgress} />
       <label className="field-label">Difficulty<select value={difficulty} onChange={(event) => {
         const value = event.target.value; setDifficulty(value);
@@ -27,7 +28,7 @@ export default function PuzzlePanel({ puzzle, side, solved, onHint, onReset, onN
       </div>
       <div className={`msg ${puzzle.msgKind}`}>{puzzle.msg}</div>
       <div className="row first">
-        <button className="btn" disabled={puzzle.solved} onClick={onHint}>Show hint</button>
+        <button className="btn" disabled={puzzle.solved} onClick={onHint}><ColorIcon name="star" />Show hint</button>
         <button className="btn" disabled={!puzzle.moves.length} onClick={onReset}>Reset</button>
       </div>
       <div className="row">

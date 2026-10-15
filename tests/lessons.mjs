@@ -19,7 +19,7 @@ for (const lesson of LESSONS) {
   } else {
     for (const move of challenge.moves) {
       const next = new Chess(challenge.fen);
-      next.move({ from: move.slice(0, 2), to: move.slice(2, 4) });
+      next.move({ from: move.slice(0, 2), to: move.slice(2, 4), ...(move[4] ? { promotion: move[4] } : {}) });
       if (lesson.slug === "spot-a-knight-fork") {
         assert.equal(next.isCheck(), true);
         assert.equal(next.isAttacked("d6", "w"), true);

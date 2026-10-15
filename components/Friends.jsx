@@ -208,6 +208,7 @@ export default function Friends({ visible = true }) {
         <p className="msg bad" role="status">{error}</p>
       </div>
       {room && <div className="card">
+        {account?.user && <a className="report-game-link" href={`/report?type=game&target=${room.id}`}>Report a game issue</a>}
         {room.result && <GameExport game={{ moves, names: room.names, color: room.color, tc: room.tc, increment: room.increment, result: room.result, outcome: room.result.title === "Draw" ? "draw" : room.winner === room.color ? "win" : "loss" }} fen={shown.fen()} />}
         <p className="sub">{room.rated ? "Rated online game" : "Unrated friend game"} · {room.tc ? `${room.tc / 60}+${room.increment || 0}` : "Unlimited"}</p>
         {active && <div className="row"><button className="btn" disabled={busy || room.drawOffer === room.color} onClick={() => act({ type: "offerDraw" })}>{room.drawOffer === room.color ? "Draw offered" : "Offer draw"}</button>

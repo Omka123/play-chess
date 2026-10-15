@@ -549,3 +549,38 @@ main.layout { max-width: 1080px; grid-template-columns: minmax(0, 1fr) 330px; pa
 .result-popup-actions button:disabled { opacity: .5; cursor: default; }
 .result-popup button:focus-visible { outline: 3px solid #bddf8c; outline-offset: 3px; }
 @media (max-width: 380px) { .result-game-stats { margin-inline: 4px; gap: 8px; } .result-game-stats strong { font-size: 24px; } .result-game-stats .result-stat-icon { font-size: 32px; } .result-coach-avatar { width: 52px; font-size: 54px; } .result-coach p { padding: 12px; font-size: 13px; } }
+.color-icon { display: inline-block; vertical-align: middle; flex-shrink: 0; filter: drop-shadow(0 1px 1px #0002); }
+.btn > .color-icon, h2 > .color-icon { width: 22px; height: 22px; margin-right: 7px; vertical-align: -5px; }
+.account-menu a > .color-icon { width: 24px; height: 24px; margin-right: 7px; vertical-align: -6px; }
+.nav-icon .color-icon { display: block; }
+.sidebar-learn { align-items: center; gap: 8px; }
+.sidebar-learn > .color-icon { width: 25px; height: 25px; }
+.sidebar-learn > span:last-child { margin-left: auto; }
+@media (max-width: 900px) { .sidebar-learn > .color-icon { width: 20px; height: 20px; } }
+@media (max-width: 760px) { .tabs .nav-icon, .sidebar-history .nav-icon { display: inline-flex; vertical-align: middle; margin-right: 5px; } .nav-icon .color-icon { width: 19px; height: 19px; } }
+.article-sponsor { margin: 36px 0; padding-top: 22px; border-top: 1px solid var(--line); }
+.report-form, .moderation-dashboard { margin: 24px 0; }
+.report-form textarea, .moderation-dashboard textarea { resize: vertical; width: 100%; }
+.moderation-dashboard { display: grid; gap: 22px; }
+.moderation-dashboard section { min-width: 0; }
+.moderation-report h3 { text-transform: capitalize; margin-top: 8px; }
+.report-details { white-space: pre-wrap; overflow-wrap: anywhere; }
+.moderation-dashboard code, .report-form code { overflow-wrap: anywhere; word-break: break-word; }
+.moderation-audit { border-bottom: 1px solid var(--line); padding: 12px 0; overflow-wrap: anywhere; }
+.moderation-audit p { margin: 5px 0; }
+.moderation-audit small { color: var(--muted); }
+.suspension-notice { border-color: var(--danger); }
+.report-game-link { display: inline-block; color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+.report-form select, .moderation-dashboard select { display: block; padding: 9px 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 6px; margin: 8px 0 15px; font: inherit; }
+.play-setup .setup-field { min-width: 0; margin: 20px 0 0; padding: 0; border: 0; }
+.play-setup .setup-field legend { padding: 0; margin-bottom: 9px; font-size: 14px; font-weight: 700; }
+.play-setup .setup-colors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.play-setup .setup-clocks { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.play-setup .setup-clocks button { grid-column: span 2; }
+.play-setup .setup-clocks button:nth-last-child(-n+2) { grid-column: span 3; }
+.play-setup .seg button { min-width: 0; min-height: 44px; padding: 10px 6px; font-size: 14px; line-height: 1.25; }
+.play-setup .setup-increment { margin: 20px 0 0; font-size: 14px; }
+.play-setup .setup-increment select { width: 100%; min-height: 44px; margin: 9px 0 0; padding: 10px 12px; font-size: 14px; line-height: 1.3; }
+.play-setup .setup-increment select:disabled { opacity: .55; cursor: not-allowed; }
+.play-setup .start { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; margin-top: 24px; }
+.play-setup .start > .color-icon { margin: 0; vertical-align: initial; }
