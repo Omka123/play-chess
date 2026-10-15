@@ -3,14 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import Board from "./Board";
+import AdCard from "./AdCard";
 import PlayerBar from "./PlayerBar";
+import GameReview from "./GameReview";
+import { reviewArrows } from "@/lib/reviewArrows";
 import { TIMES } from "@/lib/constants";
 import { buildGame, capturedInfo } from "@/lib/chessUtil";
 import { Nav } from "./PlayPanel";
 import { resolveFriendSession } from "@/lib/friendSession";
+import { useSession } from "next-auth/react";
 
-export default function Friends() {
+export default function Friends({ visible = true }) {
+  const { data: account } = useSession();
   const [room, setRoom] = useState(null);
+  const [reviewSelection, setReviewSelection] = useState(null);
   const [session, setSession] = useState(null);
   const [invite, setInvite] = useState(null);
   const [name, setName] = useState("");
@@ -23,6 +29,7 @@ export default function Friends() {
   const [view, setView] = useState(null);
   const lock = useRef(false);
   const revision = useRef(0);
+  useEffect(() => { setName(account?.user?.name || ""); }, [account?.user?.name]);
 
   useEffect(() => {
     let saved;
@@ -140,19 +147,24 @@ export default function Friends() {
     <section className="stage" aria-label="Online chess board">
       <PlayerBar {...player(top)} />
       <Board game={room ? shown : new Chess()} orient={orient} lastMove={moves[ply - 1]} myColor={room?.color}
+        arrows={room?.result && reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewArrows(reviewSelection.entry, shown.fen()) : []}
         canMove={!!active && !busy && ply === moves.length && game.turn() === room.color}
         onMove={(from, to, promotion) => act({ type: "move", from, to, promotion, ply: moves.length })} />
       <PlayerBar {...player(orient)} />
       <p className="board-note">{room ? `You play ${room.color === "w" ? "white" : "black"}. Games expire after 24 hours.` : "A board for you. A link for your friend."}</p>
     </section>
     <aside className="panel">
+      {room?.result && account?.user && <p role="status">{room.historySaved === false ? "Game history could not be saved. Reload to retry before this room expires." : "Game saved to your account history."}</p>}
+      {room?.result && <GameReview key={room.id} result={room.result} moves={moves} color={room.color} visible={visible} onGoto={setView}
+        selectedPly={reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
+        onSelect={(entry) => setReviewSelection({ roomId: room.id, entry })} />}
       <div className="card">
         <span className="eyebrow">PLAY TOGETHER</span>
         <h2>{session ? room?.result?.title || (room?.joined ? (game.turn() === room.color ? "Your move" : "Your friend’s move") : "Waiting for your friend") : invite ? "You’re invited" : "Chess is better with friends"}</h2>
         <p className="sub">{room?.result?.detail || (session ? (game.isCheck() && active ? "Check. Protect your king." : "Live moves, your own clock, and a little friendly competition.") : "Invite a friend and play from separate devices. No account needed.")}</p>
         {!session && <>
           <label className="field-label" htmlFor="friend-name">Your name</label>
-          <input id="friend-name" className="text-input" maxLength={30} value={name} placeholder="Enter your name" onChange={(e) => setName(e.target.value)} />
+          <input id="friend-name" className="text-input" maxLength={30} value={name} readOnly={Boolean(account?.user)} placeholder="Enter your name" onChange={(e) => setName(e.target.value)} />
           {!invite && <>
             <div className="label">Your pieces</div><div className="seg">{[["w", "White"], ["r", "Random"], ["b", "Black"]].map(([value, label]) => <button key={value} aria-pressed={color === value} onClick={() => setColor(value)}>{label}</button>)}</div>
             <div className="label">Time per player</div><div className="seg">{TIMES.map((time) => <button key={time.s} aria-pressed={tc === time.s} onClick={() => setTc(time.s)}>{time.label}</button>)}</div>
@@ -176,6 +188,7 @@ export default function Friends() {
       </div>}
       {session && <button className="btn" onClick={reset}>Create another game</button>}
       {!session && <div className="card friend-tip"><span className="eyebrow">HOW IT WORKS</span><p>Create a game, send the invite, and make your first move. Keep this tab open or reload to reconnect.</p></div>}
+      <AdCard creative="boards" />
     </aside>
   </main>;
 }

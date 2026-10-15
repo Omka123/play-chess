@@ -4,6 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import Board from "./Board";
 import Friends from "./Friends";
+import GameReview from "./GameReview";
+import SaveBotGame from "./SaveBotGame";
+import { reviewArrows } from "@/lib/reviewArrows";
+import AccountMenu from "./AccountMenu";
+import { useSession } from "next-auth/react";
+import AdCard from "./AdCard";
 import Link from "next/link";
 import SiteFooter from "./SiteFooter";
 import { LESSONS } from "@/lib/lessons";
@@ -29,7 +35,9 @@ const freshPuzzle = (idx) => ({
 const botById = (id) => BOTS.find((b) => b.id === id);
 
 export default function Gambit() {
+  const { data: account } = useSession();
   const [mode, setMode] = useState("play");
+  const [reviewSelection, setReviewSelection] = useState(null);
   const [play, setPlay] = useState(initialPlay);
   const [puzzle, setPuzzle] = useState(() => freshPuzzle(0));
   const [solved, setSolved] = useState([]);
@@ -165,6 +173,7 @@ export default function Gambit() {
     lastTick.current = Date.now();
     setPlay({
       ...p, stage: "game", moves: [], view: 0, human: color, orient: color,
+      historyId: crypto.randomUUID(), historyUserId: account?.user?.id || null,
       active: true, over: false, result: null, thinking: false,
       clocks: { w: p.tc * 1000, b: p.tc * 1000 }, gameId: p.gameId + 1,
     });
@@ -274,7 +283,7 @@ export default function Gambit() {
     let avatar;
     if (mode === "play") {
       if (play.stage === "game") {
-        if (color === play.human) { name = "You"; avatar = "Y"; }
+        if (color === play.human) { name = account?.user?.name || "You"; avatar = name[0]; }
         else { name = botById(play.botId).name; avatar = name[0]; }
       } else { name = colorName(color); avatar = color.toUpperCase(); }
     } else {
@@ -306,6 +315,7 @@ export default function Gambit() {
           <button role="tab" aria-selected={mode === "friends"} onClick={() => setMode("friends")}><span className="nav-icon" aria-hidden="true">♞</span>Friends<span className="nav-detail">Invite & play online</span></button>
           <button role="tab" aria-selected={mode === "puzzle"} onClick={() => setMode("puzzle")}><span className="nav-icon" aria-hidden="true">◆</span>Puzzles<span className="nav-detail">Train your tactics</span></button>
         </nav>
+        <Link href={account?.user ? "/account" : "/login"} className="sidebar-history"><span className="nav-icon" aria-hidden="true">↺</span>Game history<span className="nav-detail">Review your past games</span></Link>
         <Link href="/learn" className="sidebar-learn">Learn chess <span aria-hidden="true">→</span></Link>
         <button className="theme-btn" onClick={toggleTheme} aria-label="Toggle light and dark theme" title="Toggle theme">&#9680;</button>
       </header>
@@ -313,9 +323,10 @@ export default function Gambit() {
       <div className="sidebar-footer"><span className="sidebar-knight" aria-hidden="true">♞</span><strong>Your next great move.</strong><span>A little chess, every day.</span></div>
       <section className="intro">
         <div><span className="eyebrow">CHESSNEXA</span><h1>{mode === "play" ? "Play Computer" : mode === "friends" ? "Play with Friends" : "Chess Puzzles"}</h1></div>
-        <span className="club-badge"><span /> No account needed</span>
+        <AccountMenu />
       </section>
-      <div hidden={mode !== "friends"}><Friends /></div>
+      <div className="ad-banner-wrap"><AdCard creative="academy" format="banner" /></div>
+      <div hidden={mode !== "friends"}><Friends visible={mode === "friends"} /></div>
       <main className="layout" hidden={mode === "friends"}>
         <section className="stage" aria-label="Chess board">
           <PlayerBar {...barProps(top)} />
@@ -325,6 +336,7 @@ export default function Gambit() {
             orient={t.orient}
             lastMove={lastMove}
             hint={mode === "puzzle" ? puzzle.hint : null}
+            arrows={mode === "play" && play.over && reviewSelection?.gameId === play.gameId && play.view === reviewSelection.entry.ply - 1 ? reviewArrows(reviewSelection.entry, shown.fen()) : []}
             canMove={canMove}
             myColor={myColor}
             onMove={mode === "play" ? onPlayMove : onPuzzleMove}
@@ -333,6 +345,10 @@ export default function Gambit() {
         </section>
 
         <aside className="panel" aria-live="polite">
+          {mode === "play" && play.over && <SaveBotGame key={play.historyId} play={play} userId={account?.user?.id} />}
+          {mode === "play" && play.over && <GameReview key={play.gameId} result={play.result} moves={play.moves} color={play.human} onGoto={goto}
+            selectedPly={reviewSelection?.gameId === play.gameId && play.view === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
+            onSelect={(entry) => setReviewSelection({ gameId: play.gameId, entry })} />}
           {mode === "play" ? (
             <PlayPanel
               play={play}
@@ -358,6 +374,7 @@ export default function Gambit() {
               onPrev={() => loadPuzzle(puzzle.idx - 1)}
             />
           )}
+          <AdCard creative="boards" />
         </aside>
       </main>
       <section className="home-learning"><span className="eyebrow">PLAY WITH A PLAN</span><h2>Learn something you can use in your next game.</h2><p>Practice opening plans, recognize tactical threats, and understand why a position is checkmate. Read a guide, try its board exercise, then test the idea in a game.</p><div className="lesson-grid">{LESSONS.map((lesson) => <Link key={lesson.slug} className="lesson-card" href={`/learn/${lesson.slug}`}><span className="eyebrow">{lesson.category}</span><h3>{lesson.title}</h3><p>{lesson.description}</p><span className="lesson-link">Read & practice →</span></Link>)}</div></section>

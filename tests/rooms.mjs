@@ -5,6 +5,21 @@ import path from "node:path";
 
 const created = [];
 try {
+  const alice = { id: "alice-test", name: "Alice" };
+  const bob = { id: "bob-test", name: "Bob" };
+  const accountGame = await createRoom({ name: "Forged name", color: "w" }, alice);
+  created.push(accountGame.id);
+  assert.equal(accountGame.names.w, "Alice");
+  await assert.rejects(accessRoom(accountGame.id, accountGame.token), /Sign in/);
+  await assert.rejects(accessRoom(accountGame.id, accountGame.token, undefined, bob), /Sign in/);
+  await assert.rejects(accessRoom(accountGame.id, accountGame.invite, { type: "join" }, alice), /different account/);
+  const accountGuest = await accessRoom(accountGame.id, accountGame.invite, { type: "join", name: "Forged opponent" }, bob);
+  assert.equal(accountGuest.names.b, "Bob");
+  assert.equal(accountGuest.users, undefined);
+  assert.equal(accountGuest.email, undefined);
+  assert.equal((await accessRoom(accountGame.id, accountGame.token, { type: "move", from: "e2", to: "e4", ply: 0 }, alice)).moves.length, 1);
+  await assert.rejects(accessRoom(accountGame.id, accountGuest.token, { type: "resign" }), /Sign in/);
+  assert.equal((await accessRoom(accountGame.id, accountGuest.token, { type: "resign" }, bob)).result.title, "Alice wins");
   const host = await createRoom({ name: "Host", color: "w", tc: 300 });
   created.push(host.id);
   assert.equal((await accessRoom(host.id, host.token)).joined, false);
@@ -47,5 +62,10 @@ try {
   assert.equal((await accessRoom(timed.id, timed.token)).result.title, "Black wins");
   console.log("Passed: invites, sessions, turn order, legal moves, stale moves, resignation, checkmate, and clock expiry.");
 } finally {
+  for (const userId of ["alice-test", "bob-test"]) {
+    for (const id of created) {
+      await fs.unlink(path.join(process.cwd(), ".gambit-history", userId, `friend-${id}.json`)).catch((error) => { if (error.code !== "ENOENT") throw error; });
+    }
+  }
   for (const id of created) await fs.unlink(path.join(process.cwd(), ".gambit-rooms", `${id}.json`));
 }

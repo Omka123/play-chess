@@ -1,48 +1,54 @@
 "use client";
+import { memo } from "react";
 
-import { useId } from "react";
-
-// Lightweight sculpted pieces: curved silhouettes, ivory/ebony lighting,
-// turned bases and highlights without a WebGL canvas over the board.
-export default function ChessPiece({ type, color }) {
-  const id = useId().replace(/:/g, "");
+// Original vector silhouettes drawn to match the supplied classic-piece reference.
+function ChessPiece({ type, color }) {
   const white = color === "w";
-  const fill = `url(#${id}-body)`;
-  const edge = white ? "#6b5941" : "#0c1218";
-  const shine = white ? "#fffdf0" : "#8f9ca8";
+  const fill = white ? "#fafaf8" : "#595852";
+  const edge = white ? "#5a5a50" : "#34352e";
+  const detail = edge;
   const shapes = {
-    p: <><path d="M28 28 C30 37 29 45 23 53 L49 53 C43 45 42 37 44 28Z" /><circle cx="36" cy="21" r="10" /><ellipse cx="36" cy="32" rx="12" ry="3.5" /></>,
-    r: <><path d="M24 26 L26 43 Q26 48 22 53 L50 53 Q46 48 46 43 L48 26Z" /><path d="M19 12 H27 V19 H32 V12 H40 V19 H45 V12 H53 V27 Q36 32 19 27Z" /><path d="M24 34 H48" fill="none" /></>,
-    b: <><path d="M30 32 C31 42 27 48 22 53 H50 C45 48 41 42 42 32Z" /><path d="M36 9 C31 15 23 20 25 27 Q27 34 36 34 Q45 34 47 27 C49 20 41 15 36 9Z" /><circle cx="36" cy="8" r="3" /><path d="M39 15 L32 25" fill="none" strokeWidth="3" /><ellipse cx="36" cy="35" rx="13" ry="3.5" /></>,
-    n: <><path d="M22 53 C24 44 30 40 36 35 L29 31 L22 35 L15 28 L24 17 L30 15 L31 8 L38 13 C51 16 55 32 50 53Z" /><path d="M38 18 Q49 24 46 43" fill="none" stroke={shine} strokeOpacity=".4" strokeWidth="2" /><circle cx="30" cy="23" r="2" fill={edge} stroke="none" /><path d="M17 29 L23 28 M25 16 L28 21" fill="none" /></>,
-    q: <><path d="M29 32 C31 42 28 47 22 53 H50 C44 47 41 42 43 32Z" /><path d="M24 32 L17 16 L28 24 L36 12 L44 24 L55 16 L48 32Z" /><circle cx="17" cy="14" r="3.5" /><circle cx="36" cy="10" r="3.5" /><circle cx="55" cy="14" r="3.5" /><ellipse cx="36" cy="33" rx="14" ry="4" /></>,
-    k: <><path d="M27 30 C31 40 29 46 22 53 H50 C43 46 41 40 45 30Z" /><path d="M27 6 H33 V1 H39 V6 H45 V12 H39 V19 H33 V12 H27Z" /><path d="M23 20 Q36 15 49 20 L45 31 Q36 35 27 31Z" /><ellipse cx="36" cy="33" rx="13" ry="3.5" /></>,
+    p: <>
+      <path d="M30 36 C32 44 28 49 23 53 C18 57 17 63 15 68 H57 C55 63 54 57 49 53 C44 49 40 44 42 36Z" />
+      <circle cx="36" cy="25" r="10" />
+      <path d="M25 35 Q36 39 47 35 L45 40 Q36 43 27 40Z" />
+    </>,
+    r: <>
+      <path d="M24 28 L27 47 L23 57 H49 L45 47 L48 28Z" />
+      <path d="M16 9 H25 L26 18 H31 V9 H41 V18 H46 L47 9 H56 L53 26 Q36 31 19 26Z" />
+      <path d="M25 33 H47 M26 49 Q36 47 46 49" fill="none" stroke={detail} />
+    </>,
+    b: <>
+      <path d="M26 46 Q30 51 24 57 H48 Q42 51 46 46Z" />
+      <path fillRule="evenodd" d="M36 10 C31 16 22 26 22 36 C22 45 28 51 36 51 C44 51 50 45 50 36 C50 26 42 16 36 10Z M36 17 L40 20 L33 38 L29 36Z" />
+      <circle cx="36" cy="9" r="4" />
+    </>,
+    n: <>
+      <path d="M23 57 C23 48 30 43 36 36 L30 32 L23 37 Q19 39 15 35 L12 31 L24 16 L30 14 L34 5 L40 12 C54 15 58 28 55 43 L51 57Z" />
+      <path d="M42 20 Q52 29 45 43 Q41 49 36 53 M17 31 L23 30 M27 18 L30 22" fill="none" stroke={detail} strokeWidth="2" />
+      <circle cx="33" cy="25" r="2" fill={detail} stroke="none" />
+    </>,
+    q: <>
+      <path d="M24 39 Q29 48 23 57 H49 Q43 48 48 39Z" />
+      <path d="M23 43 L12 23 L22 29 L24 12 L31 28 L36 9 L41 28 L48 12 L50 29 L60 23 L49 43Z" />
+      {[ [12, 20], [24, 10], [36, 7], [48, 10], [60, 20] ].map(([cx, cy]) => <circle key={cx} cx={cx} cy={cy} r="4" />)}
+      <path d="M24 47 Q36 45 48 47" fill="none" stroke={detail} />
+    </>,
+    k: <>
+      <path d="M24 41 Q29 49 23 57 H49 Q43 49 48 41Z" />
+      <path d="M32 3 H40 V10 H48 V17 H40 V26 H32 V17 H24 V10 H32Z" />
+      <path fillRule="evenodd" d="M36 29 C28 15 12 20 13 31 C14 39 23 44 27 48 H45 C49 44 58 39 59 31 C60 20 44 15 36 29Z M24 28 Q32 28 32 39 Q23 36 21 32 Q20 28 24 28Z M48 28 Q52 28 51 32 Q49 36 40 39 Q40 28 48 28Z" />
+    </>,
   };
 
   return <svg className="chess-piece" viewBox="0 0 72 76" aria-hidden="true" focusable="false">
-    <defs>
-      <linearGradient id={`${id}-body`} x1="0" y1="0" x2="1" y2=".15">
-        <stop offset="0" stopColor={white ? "#a18b65" : "#111b25"} />
-        <stop offset=".24" stopColor={white ? "#fff7da" : "#667687"} />
-        <stop offset=".42" stopColor={white ? "#fffdf0" : "#3c4b59"} />
-        <stop offset=".7" stopColor={white ? "#decca5" : "#17222d"} />
-        <stop offset="1" stopColor={white ? "#90764f" : "#080f16"} />
-      </linearGradient>
-      <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
-        <stop stopColor={white ? "#fff9df" : "#738292"} />
-        <stop offset=".4" stopColor={white ? "#ddc89f" : "#2d3b48"} />
-        <stop offset="1" stopColor={white ? "#8e744e" : "#080e15"} />
-      </linearGradient>
-    </defs>
-    <ellipse cx="37" cy="70" rx="25" ry="4" fill="#0a131b" opacity=".23" />
-    <g fill={fill} stroke={edge} strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round">
+    <g fill={fill} stroke={edge} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
       {shapes[type]}
-      <ellipse cx="36" cy="53" rx="15" ry="4" />
-      <path d="M22 53 Q23 58 17 61 L55 61 Q49 58 50 53Z" />
-      <path d="M17 60 Q13 63 13 68 Q36 74 59 68 Q59 63 55 60Z" />
-      <ellipse cx="36" cy="61" rx="19" ry="4" fill={`url(#${id}-rim)`} />
-      <path d="M15 67 Q36 72 57 67" fill="none" stroke={shine} strokeOpacity=".45" />
+      {type !== "p" && <>
+        <path d="M23 57 H49 Q57 57 57 63 V68 H15 V63 Q15 57 23 57Z" />
+        <path d="M18 61 H54" fill="none" stroke={detail} strokeWidth="1.5" />
+      </>}
     </g>
-    <path d="M25 58 Q36 61 47 58" fill="none" stroke={shine} strokeWidth="1.2" strokeOpacity=".6" />
   </svg>;
 }
+export default memo(ChessPiece);

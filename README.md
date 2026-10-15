@@ -10,6 +10,8 @@ npm run dev      # http://localhost:3000
 npm run build && npm start
 ```
 
+Each `npm run dev` invocation gets a separate output folder under `.next-dev`; production builds use `.next`. This prevents different dev servers and production builds from overwriting each other's chunks. Use `npm run dev` rather than calling `next dev` directly. After changing `next.config.mjs`, restart existing development servers. Old `.next-dev` session folders can be removed when development servers are stopped.
+
 Bots and puzzles need no environment variables. Local friend games default to a private file store in `.gambit-rooms/` on a single Node server. Hosted friend games use Upstash Redis when configured; on Vercel these settings are required. Rooms expire after 24 hours. Redis updates use atomic compare-and-set to protect moves, joins, and clocks across server instances.
 
 ## Deploy friend games to Vercel
@@ -65,8 +67,22 @@ Rules come from `chess.js`. The bot is a small custom engine, so it is club-leve
 
 ## Next steps toward a real chess site
 
-1. **Accounts**: add Auth.js (NextAuth) with a Postgres database via Prisma.
+1. **Account features**: add editable profiles and account game history. Google sign-in and persistent account records are already supported.
 2. **Scale multiplayer**: add rate limiting and optionally replace polling with a WebSocket service. Shared Redis room storage is already supported.
 3. **Ratings**: store games and update Glicko-2 ratings after each result.
 4. **Stronger bots**: load Stockfish (WASM) in the worker instead of `engine.js`.
 5. **More puzzles**: import the open Lichess puzzle database (CC0).
+
+## Google sign-in and player accounts
+
+1. In Google Cloud Console, configure the OAuth consent screen and create an OAuth client of type **Web application**. Request only basic profile/email access. If the app is in testing, add your Google account under test users.
+2. Add authorized redirect URIs `http://localhost:3000/api/auth/callback/google` and `https://chessnexa.com/api/auth/callback/google` (use your actual production domain). The protocol, domain, port and path must match exactly.
+3. Copy `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` into `.env.local` and the deployment's environment variables. Generate `NEXTAUTH_SECRET` using the command in `.env.example`. Set `NEXTAUTH_URL` to `http://localhost:3000` locally and your HTTPS origin in production. Use a different secret for production; never commit credentials.
+4. Production accounts use the same Upstash REST configuration as rooms. Local accounts use `.gambit-users/`. Account records do not expire with game rooms. Keep the database private. Local records are not automatically migrated to hosted storage.
+5. Restart development or redeploy, choose **Sign in with Google**, and complete Google's consent screen. A returning Google account receives the same player ID. Verify sign-out and sign-in again, then create an invite and join from a second account in another browser. Account-bound seats require both their private room token and the matching login. Signing out does not delete an account.
+
+The `/account` page shows player details and saved game history, with results, opponents, colours, clocks, dates, filters, totals, replay, and basic mistake review. Completed friend games are archived for signed-in participants; bot games started while signed in are submitted by the browser as unrated practice games. Duplicate saves are ignored. Guests can still play, but their games are not attached to an account. Matchmaking, ratings, and cross-device recovery of active games are separate features. Puzzles remain browser-local. Google credentials are required for an end-to-end OAuth test; automated tests do not contact Google.
+
+History is stored separately from expiring rooms: in `.gambit-history/` locally and Redis hashes in hosted deployments, without a room expiry. Only the signed-in user's history is loaded by the account page. Finished friend games are archived on a successful move, resignation, or authenticated room read that detects clock expiry. Abandoned rooms with no further requests are not automatically adjudicated. Existing expired rooms and old bot games cannot be recovered. If archiving fails, reopen/reload the room before its 24-hour expiry to retry; bot games offer an explicit retry while the finished game remains open. History does not contain room tokens or invite secrets. Bot submissions are checked for legal moves, but client-reported resignation/timeout is not suitable for rated games.
+
+Provider setup reference: https://next-auth.js.org/providers/google

@@ -1,4 +1,8 @@
 node_modules
 .next
+.next-dev
 .env*.local
 .gambit-rooms
+.gambit-users
+.gambit-history
+.npm-cache

@@ -1,11 +1,14 @@
 import { accessRoom } from "@/lib/rooms";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 async function handle(request, context, action) {
   try {
     const { id } = await context.params;
     const token = request.headers.get("authorization")?.replace(/^Bearer /, "");
-    return Response.json(await accessRoom(id, token, action), { headers: { "Cache-Control": "no-store" } });
+    const session = await getServerSession(authOptions);
+    return Response.json(await accessRoom(id, token, action, session?.user), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return Response.json({ error: error.status ? error.message : "Could not update the game. Please try again." }, { status: error.status || 500 });
   }

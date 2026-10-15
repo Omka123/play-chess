@@ -1,21 +1,53 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ChessPiece from "./ChessPiece";
 import { FILES, PIECE_NAMES } from "@/lib/constants";
 import { colorName, kingSquare } from "@/lib/chessUtil";
+import { boardPoint, moveAnimations } from "@/lib/boardMotion";
+import { arrowGeometry } from "@/lib/reviewArrows";
+
+function SlidingPiece({ move, orient, onFinish }) {
+  const ref = useRef(null);
+  const start = boardPoint(move.from, orient);
+  const end = boardPoint(move.to, orient);
+  useLayoutEffect(() => {
+    const animation = ref.current.animate([
+      { transform: `translate(${(start.x - end.x) * 100}%, ${(start.y - end.y) * 100}%)` },
+      { transform: "translate(0, 0)" },
+    ], { duration: 180, easing: "cubic-bezier(.22,.61,.36,1)" });
+    animation.onfinish = onFinish;
+    return () => animation.cancel();
+  }, [move, orient]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <div ref={ref} className="sliding-piece" style={{ left: `${end.x * 12.5}%`, top: `${end.y * 12.5}%` }} aria-hidden="true"><span className="piece"><ChessPiece type={move.type} color={move.color} /></span></div>;
+}
 
 /**
  * Presentational chess board. It owns only UI state (selection, drag, promotion picker).
  * The parent owns the game and is told about moves through `onMove(from, to, promotion)`.
  */
-export default function Board({ game, orient, lastMove, hint, canMove, myColor, onMove }) {
+export default function Board({ game, orient, lastMove, hint, canMove, myColor, onMove, arrows = [] }) {
   const [selected, setSelected] = useState(null);
   const [promo, setPromo] = useState(null);
   const [ghost, setGhost] = useState(null);
   const dragRef = useRef(null);
+  const boardRef = useRef(null);
+  const previousPosition = useRef(null);
+  const skipSlide = useRef(false);
+  const [slides, setSlides] = useState([]);
   const fen = game.fen();
+
+  useLayoutEffect(() => {
+    const position = {};
+    for (const row of game.board()) for (const piece of row) if (piece) position[piece.square] = piece;
+    const previous = previousPosition.current;
+    previousPosition.current = { position, orient, fen };
+    if (previous?.fen === fen && previous.orient === orient) return;
+    const animate = previous && previous.orient === orient && !skipSlide.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setSlides(animate ? moveAnimations(previous.position, position, lastMove).map((move) => ({ ...move, fen })) : []);
+    skipSlide.current = false;
+  }, [fen, orient]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clear UI state whenever the position changes.
   useEffect(() => {
@@ -30,7 +62,7 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
   }, [selected, game]);
 
   const attempt = (from, to) => {
-    if (!targets[to]) { setSelected(null); return; }
+    if (!canMove || !targets[to]) { setSelected(null); return; }
     const p = game.get(from);
     if (p && p.type === "p" && ((p.color === "w" && to[1] === "8") || (p.color === "b" && to[1] === "1"))) {
       setPromo({ from, to, color: p.color });
@@ -60,7 +92,7 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const sqEl = el && el.closest ? el.closest("[data-sq]") : null;
       const { attempt: go, targets: t } = latest.current;
-      if (sqEl && t[sqEl.dataset.sq]) go(d.from, sqEl.dataset.sq);
+      if (sqEl && boardRef.current?.contains(sqEl) && t[sqEl.dataset.sq]) { skipSlide.current = true; go(d.from, sqEl.dataset.sq); }
       else setSelected(null);
     };
     const cancel = () => { dragRef.current = null; setGhost(null); };
@@ -106,7 +138,7 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
         <div key={sq} className={cls} data-sq={sq} role="gridcell" aria-label={label} onPointerDown={(e) => onDown(e, sq)}>
           {targets[sq] && (p ? <span className="ring" /> : <span className="dot" />)}
           {p && (
-            <span className={`piece ${p.color}${ghost && ghost.from === sq ? " dragging" : ""}`}><ChessPiece type={p.type} color={p.color} /></span>
+            <span className={`piece ${p.color}${ghost && ghost.from === sq ? " dragging" : ""}${slides.some((move) => move.fen === fen && move.to === sq) ? " slide-hidden" : ""}`}><ChessPiece type={p.type} color={p.color} /></span>
           )}
         </div>
       );
@@ -121,7 +153,19 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
       {["left", "right"].map((edge) => <div key={edge} className={`frame-coords ${edge}`} aria-hidden="true">
         {Array.from({ length: 8 }, (_, i) => <span key={i}>{flip ? i + 1 : 8 - i}</span>)}
       </div>)}
-      <div className="board" role="grid" aria-label="Chess board">{squares}</div>
+      <div className="board" ref={boardRef} role="grid" aria-label="Chess board">{squares}
+        {slides.filter((move) => move.fen === fen).map((move) => <SlidingPiece key={`${move.fen}:${move.to}`} move={move} orient={orient} onFinish={() => setSlides((current) => current.filter((item) => item !== move))} />)}
+        {arrows.length > 0 && <svg className="review-arrows" viewBox="0 0 800 800" role="img" aria-label={arrows.map((arrow) => arrow.label).join(". ")}>
+          {arrows.map((arrow) => {
+            const geometry = arrowGeometry(arrow, orient);
+            return <g key={arrow.kind} className={`board-arrow ${arrow.kind}`}>
+              <title>{arrow.label}</title>
+              <path d={geometry.path} />
+              <polygon points="0,0 -40,-26 -40,26" transform={`translate(${geometry.end.x} ${geometry.end.y}) rotate(${geometry.angle})`} />
+            </g>;
+          })}
+        </svg>}
+      </div>
 
       {promo && (
         <div className="promo" onClick={(e) => { if (e.target === e.currentTarget) { setPromo(null); setSelected(null); } }}>
