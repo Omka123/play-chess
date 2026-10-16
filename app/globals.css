@@ -252,6 +252,14 @@ nav.tabs button:hover { background: #34332f; }
 .club-badge { padding: 7px 10px; font-size: 11px; border-radius: 5px; background: transparent; border: 0; }
 main.layout { max-width: 1080px; grid-template-columns: minmax(0, 1fr) 330px; padding: 0 24px 32px; gap: 24px; }
 .stage { width: min(100%, 500px); gap: 8px; }
+@media (min-width: 761px) {
+  main.layout > .stage {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    width: min(100%, 500px);
+  }
+}
 .boardwrap { border: 0; border-radius: 3px; background: transparent; box-shadow: 0 3px 12px rgba(0,0,0,.2); margin-bottom: 0; }
 .board { inset: 0; border: 0; box-shadow: none; }
 .board::after { display: none; }
@@ -407,10 +415,27 @@ main.layout { max-width: 1080px; grid-template-columns: minmax(0, 1fr) 330px; pa
 .sidebar-history { display: grid; grid-template-columns: 30px 1fr; align-items: center; column-gap: 9px; padding: 12px 10px; margin-top: -16px; border-radius: 6px; font-size: 18px; font-weight: 700; color: #d3d0ca; text-decoration: none; }
 .sidebar-history:hover { background: #34332f; }
 .sidebar-history + .sidebar-history { margin-top: 4px; }
-header.game-nav { gap:16px; overflow-y:auto; }
+header.game-nav { gap:16px; overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+header.game-nav::-webkit-scrollbar { display:none; width:0; height:0; }
+header.game-nav > * { flex-shrink:0; }
 .sidebar-extra { display:grid; gap:4px; margin-top:-8px; }
 .sidebar-extra .sidebar-history { margin:0; font-size:16px; padding:9px 10px; }
 @media(min-width:761px) and (max-height:900px) { .sidebar-footer { display:none; } }
+@media(min-width:761px) and (max-height:800px) {
+  header.game-nav { gap:10px; padding-top:18px; padding-bottom:16px; }
+  .game-nav nav.tabs { gap:4px; }
+  .game-nav nav.tabs button { padding:9px 10px; }
+  .game-nav .sidebar-extra { gap:2px; margin-top:0; }
+  .game-nav .sidebar-history { padding:8px 10px; }
+}
+@media(min-width:761px) and (max-height:680px) {
+  header.game-nav { gap:8px; padding-top:12px; padding-bottom:12px; }
+  .game-nav .nav-detail { display:none; }
+  .game-nav nav.tabs button,.game-nav .sidebar-history { min-height:42px; padding:7px 10px; font-size:15px; }
+  .game-nav .nav-icon { grid-row:auto; font-size:22px; }
+  .game-nav .nav-icon .color-icon { width:24px; height:24px; }
+  .game-nav .sidebar-learn { padding:8px 10px; font-size:14px; }
+}
 @media(max-width:760px) { header.game-nav { gap:10px; overflow:visible; } .sidebar-extra { display:flex; flex-wrap:wrap; gap:5px; margin:0; flex-basis:100%; } .sidebar-extra .sidebar-history { font-size:13px; padding:8px; flex:1 1 auto; } }
 @media (max-width: 900px) {
   .sidebar-history { display: block; margin-top: 0; padding: 8px; font-size: 13px; }

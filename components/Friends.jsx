@@ -181,11 +181,6 @@ export default function Friends({ visible = true }) {
     </section>
     <aside className="panel">
       {room?.result && account?.user && <p role="status">{room.historySaved === false ? "Game history could not be saved. Reload to retry before this room expires." : "Game saved to your account history."}</p>}
-      {room?.result && <GameReview key={room.id} result={room.result} moves={moves} color={room.color} visible={visible} onGoto={setView}
-        outcome={room.result.title === "Draw" ? "draw" : room.winner === room.color ? "win" : "loss"}
-        rated={room.rated} gameId={room.id} onNewGame={reset} onRematch={() => act({ type: "rematch" })} rematchPending={room.rematchOffered} actionsBusy={busy} clockLabel={room.tc ? `${room.tc / 60} + ${room.increment || 0}` : "game"}
-        selectedPly={reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
-        onSelect={(entry) => setReviewSelection(entry ? { roomId: room.id, entry } : null)} />}
       <div className={`card friend-game-card ${!session ? "play-setup friend-setup" : ""}`}>
           <span className="eyebrow">PLAY TOGETHER</span>
           {session && <p role="status" className="sub">{connection}</p>}
@@ -226,6 +221,11 @@ export default function Friends({ visible = true }) {
         <Nav view={ply} total={moves.length} onGoto={(value) => setView(value === moves.length ? null : value)} />
         <div className="row first"><button className="btn" onClick={() => setFlipped(!flipped)}>Flip board</button>{active && <button className="btn danger" disabled={busy} onClick={() => { if (window.confirm("Resign this game?")) act({ type: "resign" }); }}>Resign</button>}</div>
       </div>}
+      {room?.result && <GameReview key={room.id} result={room.result} moves={moves} color={room.color} visible={visible} onGoto={setView}
+        outcome={room.result.title === "Draw" ? "draw" : room.winner === room.color ? "win" : "loss"}
+        rated={room.rated} gameId={room.id} onNewGame={reset} onRematch={() => act({ type: "rematch" })} rematchPending={room.rematchOffered} actionsBusy={busy} clockLabel={room.tc ? `${room.tc / 60} + ${room.increment || 0}` : "game"}
+        selectedPly={reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
+        onSelect={(entry) => setReviewSelection(entry ? { roomId: room.id, entry } : null)} />}
       {session && <button className="btn" onClick={reset}>Create another game</button>}
       {!session && <div className="card friend-tip"><span className="eyebrow">HOW IT WORKS</span><p>Create a game, send the invite, and make your first move. Keep this tab open or reload to reconnect.</p></div>}
       <AdCard creative="boards" />

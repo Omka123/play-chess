@@ -370,12 +370,6 @@ export default function Gambit() {
 
         <aside className="panel" aria-live="polite">
           {mode === "play" && play.over && <SaveBotGame key={play.historyId} play={play} userId={account?.user?.id} />}
-          {mode === "play" && play.over && <GameExport game={{ moves: play.moves, names: { [play.human]: account?.user?.name || "You", [play.human === "w" ? "b" : "w"]: botById(play.botId).name }, color: play.human, outcome: play.result.title === "Draw" ? "draw" : play.result.title === "You win" ? "win" : "loss", tc: play.tc, increment: play.increment, result: play.result }} fen={shown.fen()} />}
-          {mode === "play" && play.over && <GameReview key={play.gameId} result={play.result} moves={play.moves} color={play.human} onGoto={goto}
-            outcome={play.result.title === "Draw" ? "draw" : play.result.title === "You win" ? "win" : "loss"}
-            onNewGame={newGameSetup} onRematch={() => startGame(play.color !== "r")} clockLabel={play.tc ? `${play.tc / 60} + ${play.increment || 0}` : "game"}
-            selectedPly={reviewSelection?.gameId === play.gameId && play.view === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
-            onSelect={(entry) => setReviewSelection(entry ? { gameId: play.gameId, entry } : null)} />}
           {mode === "play" ? (
             <PlayPanel
               play={play}
@@ -403,6 +397,12 @@ export default function Gambit() {
               onProgress={(saved) => setSolved((current) => [...new Set([...current, ...saved])])}
             />
           )}
+          {mode === "play" && play.over && <GameExport game={{ moves: play.moves, names: { [play.human]: account?.user?.name || "You", [play.human === "w" ? "b" : "w"]: botById(play.botId).name }, color: play.human, outcome: play.result.title === "Draw" ? "draw" : play.result.title === "You win" ? "win" : "loss", tc: play.tc, increment: play.increment, result: play.result }} fen={shown.fen()} />}
+          {mode === "play" && play.over && <GameReview key={play.gameId} result={play.result} moves={play.moves} color={play.human} onGoto={goto}
+            outcome={play.result.title === "Draw" ? "draw" : play.result.title === "You win" ? "win" : "loss"}
+            onNewGame={newGameSetup} onRematch={() => startGame(play.color !== "r")} clockLabel={play.tc ? `${play.tc / 60} + ${play.increment || 0}` : "game"}
+            selectedPly={reviewSelection?.gameId === play.gameId && play.view === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
+            onSelect={(entry) => setReviewSelection(entry ? { gameId: play.gameId, entry } : null)} />}
           <AdCard creative="boards" />
         </aside>
       </main>
