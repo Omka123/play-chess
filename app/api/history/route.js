@@ -3,6 +3,7 @@ import { Chess } from "chess.js";
 import { authOptions } from "@/lib/auth";
 import { saveGame } from "@/lib/gameHistory";
 import { BOTS } from "@/lib/constants";
+import { validMoveTime } from "@/lib/moveTiming";
 export const runtime = "nodejs";
 export async function POST(request) {
   const session = await getServerSession(authOptions);
@@ -13,7 +14,7 @@ export async function POST(request) {
     const bot = BOTS.find((entry) => entry.id === input.botId);
     if (!bot || !/^[a-f0-9-]{36}$/.test(input.id) || !["w", "b"].includes(input.color) || !Array.isArray(input.moves) || input.moves.length > 1200 || !["board", "resign", "timeout"].includes(input.reason)) throw new Error();
     const game = new Chess();
-    const moves = input.moves.map((move) => { const legal = game.move({ from: move.from, to: move.to, promotion: move.promotion }); return { from: legal.from, to: legal.to, ...(legal.promotion ? { promotion: legal.promotion } : {}), san: legal.san }; });
+    const moves = input.moves.map((move) => { const legal = game.move({ from: move.from, to: move.to, promotion: move.promotion }); return { from: legal.from, to: legal.to, ...(legal.promotion ? { promotion: legal.promotion } : {}), san: legal.san, ...(validMoveTime(move.timeSpentMs) ? { timeSpentMs: Math.round(move.timeSpentMs) } : {}) }; });
     let winner = null;
     if (input.reason === "board") {
       if (!game.isGameOver()) throw new Error();

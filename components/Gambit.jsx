@@ -4,12 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import Board from "./Board";
 import Friends from "./Friends";
+import MatchPanel from "./MatchPanel";
+import MatchPromotion from "./MatchPromotion";
 import GameReview from "./GameReview";
 import SaveBotGame from "./SaveBotGame";
 import { reviewArrows } from "@/lib/reviewArrows";
 import AccountMenu from "./AccountMenu";
 import { useSession } from "next-auth/react";
-import AdCard from "./AdCard";
 import Link from "next/link";
 import SiteFooter from "./SiteFooter";
 import { LESSONS } from "@/lib/lessons";
@@ -23,6 +24,7 @@ import { chooseMove } from "@/lib/engine";
 import GameExport from "./GameExport";
 import ColorIcon from "./ColorIcon";
 import { clockAfterMove, tickPlayClock } from "@/lib/playClock";
+import { elapsedMoveTime } from "@/lib/moveTiming";
 
 const initialPlay = {
   stage: "setup", // "setup" | "game"
@@ -121,14 +123,15 @@ export default function Gambit() {
       const mv = await askBot(fen, bot);
       pending = false;
       if (cancelled || !mv) return;
+      const moveAt = performance.now();
       setPlay((p) => {
         if (p.gameId !== gid || p.moves.length !== ply || p.over) return p;
         const r = tryMove(undefined, p.moves, mv.from, mv.to, mv.promotion);
         if (!r) return { ...p, thinking: false };
-        const moves = [...p.moves, r.move];
+        const moves = [...p.moves, { ...r.move, timeSpentMs: elapsedMoveTime(p.turnStartedAt, moveAt) }];
         const over = r.game.isGameOver();
         return {
-          ...p, moves, thinking: false, over, active: !over,
+          ...p, moves, turnStartedAt: moveAt, thinking: false, over, active: !over,
           clocks: clockAfterMove(p, r.move.color),
           view: p.view === p.moves.length ? moves.length : p.view,
           result: over ? gameResult(r.game, p.human, bot.name) : null,
@@ -179,7 +182,7 @@ export default function Gambit() {
     setPlay({
       ...p, stage: "game", moves: [], view: 0, human: color, orient: color,
       historyId: crypto.randomUUID(), historyUserId: account?.user?.id || null,
-      active: true, over: false, result: null, thinking: false,
+      active: true, over: false, result: null, thinking: false, turnStartedAt: performance.now(),
       clocks: { w: p.tc * 1000, b: p.tc * 1000 }, gameId: p.gameId + 1,
     });
   };
@@ -190,14 +193,15 @@ export default function Gambit() {
   };
 
   const onPlayMove = (from, to, promo) => {
+    const moveAt = performance.now();
     setPlay((p) => {
       if (!p.active || p.over || buildGame(undefined, p.moves).turn() !== p.human) return p;
       const r = tryMove(undefined, p.moves, from, to, promo);
       if (!r) return p;
-      const moves = [...p.moves, r.move];
+      const moves = [...p.moves, { ...r.move, timeSpentMs: elapsedMoveTime(p.turnStartedAt, moveAt) }];
       const over = r.game.isGameOver();
       return {
-        ...p, moves, view: moves.length, over, active: !over, thinking: false,
+        ...p, moves, turnStartedAt: moveAt, view: moves.length, over, active: !over, thinking: false,
         clocks: clockAfterMove(p, p.human),
         result: over ? gameResult(r.game, p.human, botById(p.botId).name) : null,
       };
@@ -217,14 +221,14 @@ export default function Gambit() {
     if (tryMove(undefined, play.moves, premove.from, premove.to, premove.promotion)) onPlayMove(premove.from, premove.to, premove.promotion);
   }, [premove, play.gameId, play.moves.length, play.active, play.over, play.thinking, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const undo = () => setPlay((p) => {
+  const undo = () => { const moveAt = performance.now(); setPlay((p) => {
     if (!p.active || p.over || p.thinking) return p;
     const turn = p.moves.length % 2 === 0 ? "w" : "b";
     const n = turn === p.human ? 2 : 1;
     if (p.moves.length < n) return p;
     const moves = p.moves.slice(0, -n);
-    return { ...p, moves, view: moves.length };
-  });
+    return { ...p, moves, view: moves.length, turnStartedAt: moveAt };
+  }); };
 
   const flip = () => setPlay((p) => ({ ...p, orient: p.orient === "w" ? "b" : "w" }));
 
@@ -344,9 +348,8 @@ export default function Gambit() {
         <div><span className="eyebrow">CHESSNEXA</span><h1>{mode === "play" ? "Play Computer" : mode === "friends" ? "Play with Friends" : "Chess Puzzles"}</h1></div>
         <AccountMenu />
       </section>
-      <div className="ad-banner-wrap"><AdCard creative="academy" format="banner" /></div>
       <div hidden={mode !== "friends"}><Friends visible={mode === "friends"} /></div>
-      <main className="layout" hidden={mode === "friends"}>
+      <main className="layout match-layout" hidden={mode === "friends"}>
         <section className="stage" aria-label="Chess board">
           <PlayerBar {...barProps(top)} />
           <Board
@@ -368,7 +371,7 @@ export default function Gambit() {
           {mode === "play" && play.active && premove?.gameId === play.gameId && <button className="btn" onClick={() => setPremove(null)}>Cancel premove · {premove.from}–{premove.to}</button>}
         </section>
 
-        <aside className="panel" aria-live="polite">
+        <MatchPanel>
           {mode === "play" && play.over && <SaveBotGame key={play.historyId} play={play} userId={account?.user?.id} />}
           {mode === "play" ? (
             <PlayPanel
@@ -403,8 +406,8 @@ export default function Gambit() {
             onNewGame={newGameSetup} onRematch={() => startGame(play.color !== "r")} clockLabel={play.tc ? `${play.tc / 60} + ${play.increment || 0}` : "game"}
             selectedPly={reviewSelection?.gameId === play.gameId && play.view === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
             onSelect={(entry) => setReviewSelection(entry ? { gameId: play.gameId, entry } : null)} />}
-          <AdCard creative="boards" />
-        </aside>
+        </MatchPanel>
+        <MatchPromotion />
       </main>
       <section className="home-learning"><span className="eyebrow">PLAY WITH A PLAN</span><h2>Learn something you can use in your next game.</h2><p>Practice opening plans, recognize tactical threats, and understand why a position is checkmate. Read a guide, try its board exercise, then test the idea in a game.</p><div className="lesson-grid">{LESSONS.map((lesson) => <Link key={lesson.slug} className="lesson-card" href={`/learn/${lesson.slug}`}><span className="eyebrow">{lesson.category}</span><h3>{lesson.title}</h3><p>{lesson.description}</p><span className="lesson-link">Read & practice →</span></Link>)}</div></section>
       <SiteFooter />

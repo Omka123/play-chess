@@ -75,7 +75,7 @@ try {
   const botPage = await white.newPage(); botPage.on("pageerror", (error) => errors.push(error.message));
   await botPage.addInitScript(() => { sessionStorage.removeItem("gambit:room"); localStorage.setItem("gambit:prefs", JSON.stringify({ botId: 1, color: "w", tc: 180 })); });
   await botPage.goto(origin);
-  await botPage.getByRole("button", { name: "Start game", exact: true }).click();
+  await botPage.getByRole("button", { name: "Start Game", exact: true }).click();
   await botPage.locator('[data-sq="e2"]:visible').click(); await botPage.locator('[data-sq="e4"]:visible').click();
   await botPage.getByRole("button", { name: "Undo", exact: true }).waitFor({ state: "visible" });
   await botPage.waitForFunction(() => [...document.querySelectorAll("main:not([hidden]) .moves button")].length >= 2);

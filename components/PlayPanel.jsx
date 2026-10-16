@@ -3,8 +3,10 @@
 import { useEffect, useRef } from "react";
 import { BOTS, TIMES } from "@/lib/constants";
 import ColorIcon from "./ColorIcon";
+import Link from "next/link";
+import MoveNotation from "./MoveNotation";
 
-function MoveList({ moves, view, onGoto }) {
+export function MoveList({ moves, view, onGoto }) {
   const ref = useRef(null);
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
@@ -17,9 +19,9 @@ function MoveList({ moves, view, onGoto }) {
   for (let i = 0; i < moves.length; i += 2) {
     rows.push(
       <span key={`n${i}`} className="n">{i / 2 + 1}.</span>,
-      <button key={`a${i}`} className={view === i + 1 ? "cur" : ""} onClick={() => onGoto(i + 1)}>{moves[i].san}</button>,
+      <button key={`a${i}`} className={view === i + 1 ? "cur" : ""} onClick={() => onGoto(i + 1)}><MoveNotation move={moves[i]} /></button>,
       moves[i + 1]
-        ? <button key={`b${i}`} className={view === i + 2 ? "cur" : ""} onClick={() => onGoto(i + 2)}>{moves[i + 1].san}</button>
+        ? <button key={`b${i}`} className={view === i + 2 ? "cur" : ""} onClick={() => onGoto(i + 2)}><MoveNotation move={moves[i + 1]} /></button>
         : <span key={`b${i}`} />
     );
   }
@@ -44,7 +46,10 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
     return (
       <div className="card play-setup">
         <h2>Play Computer</h2>
-        <p className="sub">Open Play with Bot to choose your opponent.</p>
+        <p className="sub">Choose your clock and make your next move.</p>
+        <label className="match-clock-select"><ColorIcon name="history" /><select aria-label="Time control" value={play.tc} onChange={(event) => onPrefs({ tc: Number(event.target.value) })}>{TIMES.map((time) => <option key={time.s} value={time.s}>{time.label}{time.s >= 600 ? " · Rapid" : time.s >= 180 ? " · Blitz" : time.s ? " · Bullet" : " · Practice"}</option>)}</select></label>
+        <button className="btn primary start match-start" onClick={onStart}>Start Game</button>
+        <details className="match-custom"><summary><ColorIcon name="user" />Custom Challenge</summary>
 
         <details className="bot-category">
           <summary>
@@ -75,16 +80,10 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
         </div>
         </fieldset>
 
-        <fieldset className="setup-field"><legend>Clock</legend>
-        <div className="seg setup-clocks">
-          {TIMES.map((t) => (
-            <button key={t.s} aria-pressed={play.tc === t.s} onClick={() => onPrefs({ tc: t.s })}>{t.label}</button>
-          ))}
-        </div>
-        </fieldset>
-
         <label className="field-label setup-increment">Increment<select value={play.increment || 0} disabled={!play.tc} onChange={(event) => onPrefs({ increment: Number(event.target.value) })}><option value={0}>None</option><option value={2}>+2 seconds per move</option><option value={5}>+5 seconds per move</option></select></label>
-        <button className="btn primary start" onClick={onStart}><ColorIcon name="play" />Start game</button>
+        </details>
+        <Link className="btn match-action" href="/?online=1"><ColorIcon name="friends" />Play a Friend</Link>
+        <Link className="btn match-action" href="/hub"><ColorIcon name="star" />Tournaments</Link>
       </div>
     );
   }
@@ -104,6 +103,7 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
     <>
       <div className="card">{status}</div>
       <div className="card">
+        <p className="move-time-heading">Moves <span>Time per move</span></p>
         <MoveList moves={play.moves} view={play.view} onGoto={onGoto} />
         <Nav view={play.view} total={play.moves.length} onGoto={onGoto} />
         <div className="row first">

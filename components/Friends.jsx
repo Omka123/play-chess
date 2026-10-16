@@ -3,16 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import Board from "./Board";
-import AdCard from "./AdCard";
 import PlayerBar from "./PlayerBar";
 import GameReview from "./GameReview";
 import { reviewArrows } from "@/lib/reviewArrows";
 import { TIMES } from "@/lib/constants";
 import { buildGame, capturedInfo } from "@/lib/chessUtil";
-import { Nav } from "./PlayPanel";
+import { Nav, MoveList } from "./PlayPanel";
 import { resolveFriendSession } from "@/lib/friendSession";
 import { useSession } from "next-auth/react";
 import OnlineMatchmaking from "./OnlineMatchmaking";
+import MatchPanel from "./MatchPanel";
+import MatchPromotion from "./MatchPromotion";
 import GameExport from "./GameExport";
 
 export default function Friends({ visible = true }) {
@@ -164,7 +165,7 @@ export default function Friends({ visible = true }) {
     showClock: !!room?.tc, clock: room?.clocks[side] || 0, running: active && game.turn() === side, low: room?.clocks[side] < 20000 });
   const link = room?.invite ? `${window.location.origin}${window.location.pathname}?room=${room.id}#invite=${room.invite}` : "";
 
-  return <main className="layout friends-layout">
+  return <main className="layout friends-layout match-layout">
     <section className="stage" aria-label="Online chess board">
       <PlayerBar {...player(top)} />
       <Board game={room ? shown : new Chess()} orient={orient} lastMove={moves[ply - 1]} myColor={room?.color}
@@ -179,7 +180,7 @@ export default function Friends({ visible = true }) {
       {active && premove?.roomId === room.id && <button className="btn" onClick={() => setPremove(null)}>Cancel premove · {premove.from}–{premove.to}</button>}
       <p className="board-note">{room ? `You play ${room.color === "w" ? "white" : "black"}. Games expire after 24 hours.` : "A board for you. A link for your friend."}</p>
     </section>
-    <aside className="panel">
+    <MatchPanel>
       {room?.result && account?.user && <p role="status">{room.historySaved === false ? "Game history could not be saved. Reload to retry before this room expires." : "Game saved to your account history."}</p>}
       <div className={`card friend-game-card ${!session ? "play-setup friend-setup" : ""}`}>
           <span className="eyebrow">PLAY TOGETHER</span>
@@ -216,8 +217,8 @@ export default function Friends({ visible = true }) {
           {room.drawOffer && room.drawOffer !== room.color && <><button className="btn" disabled={busy} onClick={() => act({ type: "acceptDraw" })}>Accept draw</button><button className="btn" disabled={busy} onClick={() => act({ type: "declineDraw" })}>Decline draw</button></>}
         </div>}
         {room.result && <div className="row"><button className="btn primary" disabled={busy || room.rematchOffered} onClick={() => act({ type: "rematch" })}>{room.rematchOffered ? "Waiting for rematch…" : room.rematchRequested ? "Accept rematch" : "Request rematch"}</button><small>Rematches are unrated.</small></div>}
-        <div className="label">Move history <span className="badge">{moves.length} plies</span></div>
-        <div className="friend-moves">{moves.length ? moves.map((move, i) => <button key={i} className={`btn ${ply === i + 1 ? "selected-move" : ""}`} onClick={() => setView(i + 1)}>{i % 2 === 0 ? `${Math.floor(i / 2) + 1}. ` : ""}{move.san}</button>) : <p className="sub">Your opening story starts here.</p>}</div>
+        <p className="move-time-heading">Move history <span>Time per move</span></p>
+        <MoveList moves={moves} view={ply} onGoto={setView} />
         <Nav view={ply} total={moves.length} onGoto={(value) => setView(value === moves.length ? null : value)} />
         <div className="row first"><button className="btn" onClick={() => setFlipped(!flipped)}>Flip board</button>{active && <button className="btn danger" disabled={busy} onClick={() => { if (window.confirm("Resign this game?")) act({ type: "resign" }); }}>Resign</button>}</div>
       </div>}
@@ -228,7 +229,7 @@ export default function Friends({ visible = true }) {
         onSelect={(entry) => setReviewSelection(entry ? { roomId: room.id, entry } : null)} />}
       {session && <button className="btn" onClick={reset}>Create another game</button>}
       {!session && <div className="card friend-tip"><span className="eyebrow">HOW IT WORKS</span><p>Create a game, send the invite, and make your first move. Keep this tab open or reload to reconnect.</p></div>}
-      <AdCard creative="boards" />
-    </aside>
+    </MatchPanel>
+    <MatchPromotion />
   </main>;
 }

@@ -22,3 +22,4 @@ await import("./moderation.mjs");
 await import("./sponsor.mjs");
 await import("./ratings.mjs");
 await import("./platform.mjs");
+await import("./moveTiming.mjs");
