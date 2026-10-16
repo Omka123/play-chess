@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { INITIAL_RATING } from "@/lib/ratings";
 const avatars = { knight: "♞", king: "♚", queen: "♛", rook: "♜", bishop: "♝", pawn: "♟" };
 export default function CommunityDashboard() {
   const { update } = useSession();
@@ -39,7 +40,8 @@ export default function CommunityDashboard() {
     catch { setError("Allow browser storage to open your game."); }
   }
   const history = data?.profile.ratingHistory.filter((entry) => entry.category === category) || [];
-  const points = [1200, ...history.map((entry) => entry.rating)];
+  const startingRating = history.length ? history[0].rating - history[0].change : data?.profile.ratings[category] ?? INITIAL_RATING;
+  const points = [startingRating, ...history.map((entry) => entry.rating)];
   const low = Math.min(...points) - 20, high = Math.max(...points) + 20;
   return <section className="community-dashboard" aria-label="Player profile and friends">
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
@@ -47,7 +49,7 @@ export default function CommunityDashboard() {
       {data.profile.suspended && <div className="card suspension-notice" role="alert"><strong>Your account is suspended from online play and community actions.</strong><p>{data.profile.suspensionReason}</p><a href="/contact">Contact the operator to appeal</a></div>}
       <div className="profile-heading"><span className="profile-avatar" aria-hidden="true">{avatars[data.profile.avatar]}</span><div><h2>{data.profile.name}</h2><p>@{data.profile.username}</p></div></div>
       <div className="rating-cards">{Object.entries(data.profile.ratings).map(([name, rating]) => <div className="card" key={name}><span>{name}</span><strong>{rating}</strong></div>)}</div>
-      <p className="sub">{data.profile.ratedCount} rated games · Elo ratings start at 1200. Computer and direct friend games are unrated.</p>
+      <p className="sub">{data.profile.ratedCount} rated games · New players start at {INITIAL_RATING}. Win rated games to gain points; changes depend on your opponent's rating. Computer and direct friend games are unrated.</p>
       <details className="card"><summary>Edit player profile</summary><form onSubmit={(event) => { event.preventDefault(); act({ type: "profile", username: form.username, name: form.name, avatar: form.avatar }, "Profile saved."); }}>
         <label className="field-label">Username<input className="text-input" value={form.username} minLength={3} maxLength={20} pattern="[a-z][a-z0-9_]{2,19}" required onChange={(event) => setForm({ ...form, username: event.target.value })} /></label>
         <label className="field-label">Display name<input className="text-input" value={form.name} maxLength={30} required onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>

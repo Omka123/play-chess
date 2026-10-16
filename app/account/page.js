@@ -19,6 +19,7 @@ export default async function Account() {
     <p>Your Google account is connected. Your player name is used automatically when you create or join a friend game.</p>
     <p><Link className="btn primary" href="/">Play chess</Link></p>
     {isModerator(session.user) && <p><Link className="btn" href="/moderation">Open moderation dashboard</Link></p>}
+    <p><Link className="btn primary" href="/hub">Open player hub: clubs, tournaments and notifications</Link></p>
     <CommunityDashboard />
     {historyError ? <p role="alert">Game history is temporarily unavailable. Please refresh to retry.</p> : <GameHistory games={games} />}
     <AccountMenu />

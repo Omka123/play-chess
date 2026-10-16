@@ -38,7 +38,7 @@ try {
   await accessRoom(roomId, statuses[loser].active.token, { type: "resign" }, users[loser]);
   await Promise.all(participants.map((index) => accessRoom(roomId, statuses[index].active.token, undefined, users[index])));
   const loserProfile = await registerPlayer(users[loser]), winnerProfile = await registerPlayer(users[winner]);
-  assert.equal(loserProfile.ratings.bullet, 1184); assert.equal(winnerProfile.ratings.bullet, 1216);
+  assert.equal(loserProfile.ratings.bullet, 184); assert.equal(winnerProfile.ratings.bullet, 216);
   assert.equal(loserProfile.ratedCount, 1); assert.equal(winnerProfile.ratedCount, 1);
   assert.equal(hashes.get(`gambit:history:${users[loser].id}`).size, 1);
   console.log("Passed: Redis CAS retries, four-player simultaneous matchmaking, no duplicate seats, concurrent result reads and exactly-once ratings/history.");

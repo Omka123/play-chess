@@ -319,7 +319,7 @@ export default function Gambit() {
 
   return (
     <>
-      <header className="top">
+      <header className="top game-nav">
         <div className="brand">
           <span className="mark" aria-hidden="true"><ColorIcon name="knight" size={36} /></span>
           ChessNexa
@@ -329,7 +329,12 @@ export default function Gambit() {
           <button role="tab" aria-selected={mode === "friends"} onClick={() => setMode("friends")}><span className="nav-icon"><ColorIcon name="friends" size={29} /></span>Friends<span className="nav-detail">Invite & play online</span></button>
           <button role="tab" aria-selected={mode === "puzzle"} onClick={() => setMode("puzzle")}><span className="nav-icon"><ColorIcon name="puzzle" size={29} /></span>Puzzles<span className="nav-detail">Train your tactics</span></button>
         </nav>
+        <div className="sidebar-extra">
         <Link href={account?.user ? "/account" : "/login"} className="sidebar-history"><span className="nav-icon"><ColorIcon name="history" size={29} /></span>Game history<span className="nav-detail">Review your past games</span></Link>
+        <Link href="/hub" className="sidebar-history"><span className="nav-icon"><ColorIcon name="friends" size={29} /></span>Player hub<span className="nav-detail">Clubs, events and daily chess</span></Link>
+        <Link href="/training" className="sidebar-history"><span className="nav-icon"><ColorIcon name="puzzle" size={29} /></span>Training<span className="nav-detail">Puzzles and learning progress</span></Link>
+        <Link href="/analysis" className="sidebar-history"><span className="nav-icon"><ColorIcon name="learn" size={29} /></span>Analysis studio<span className="nav-detail">Import PGN or FEN</span></Link>
+        </div>
         <Link href="/learn" className="sidebar-learn"><ColorIcon name="learn" />Learn chess <span aria-hidden="true">→</span></Link>
         <button className="theme-btn" onClick={toggleTheme} aria-label="Toggle light and dark theme" title="Toggle theme">&#9680;</button>
       </header>

@@ -1,0 +1,18 @@
+import assert from "node:assert/strict";
+import { INITIAL_RATING, eloChange } from "../lib/ratings.js";
+import { ensurePlayer } from "../lib/community.js";
+assert.equal(INITIAL_RATING, 200);
+assert.equal(eloChange(200, 200, 1), 16);
+assert.equal(eloChange(200, 200, 0), -16);
+assert.equal(eloChange(200, 200, .5), 0);
+assert.ok(eloChange(200, 600, 1) > 16);
+assert.ok(eloChange(600, 200, 1) < 16);
+assert.equal(eloChange(0, 200, 0), 0);
+const state = { players: {} };
+const fresh = ensurePlayer(state, { id: "fresh-rating-user", name: "Fresh" });
+assert.deepEqual(fresh.ratings, { bullet: 200, blitz: 200, rapid: 200 });
+state.players.old = { id: "old", ratings: { bullet: 1200, blitz: 1200, rapid: 1200 }, ratingHistory: [], ratedCount: 0 };
+assert.equal(ensurePlayer(state, { id: "old" }).ratings.blitz, 200);
+state.players.played = { id: "played", ratings: { bullet: 1200, blitz: 1216, rapid: 1200 }, ratingHistory: [{ category: "blitz", rating: 1216, change: 16 }], ratedCount: 1 };
+assert.equal(ensurePlayer(state, { id: "played" }).ratings.blitz, 1216);
+console.log("Passed: 200-point initial ratings, wins/losses/draws, opponent strength, rating floor and preserving earned ratings.");

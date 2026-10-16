@@ -11,6 +11,7 @@ export default function OnlineMatchmaking({ onMatch, disabled }) {
   const [increment, setIncrement] = useState(0);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [searchInfo, setSearchInfo] = useState(null);
   const callback = useRef(onMatch); callback.current = onMatch;
   const request = async (type) => {
     const response = await fetch("/api/matchmaking", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type, tc, increment }) });
@@ -26,6 +27,7 @@ export default function OnlineMatchmaking({ onMatch, disabled }) {
         const data = await request("join");
         if (cancelled) return;
         if (data.session) { setSearching(false); callback.current(data.session); return; }
+        setSearchInfo(data);
         setError("");
       } catch (error) { if (!cancelled) setError(error.message); }
       if (!cancelled) timer = setTimeout(poll, 2000);
@@ -42,6 +44,7 @@ export default function OnlineMatchmaking({ onMatch, disabled }) {
         try { const data = await request("cancel"); setSearching(false); if (data.session) callback.current(data.session); }
         catch (error) { setError(error.message); } finally { setBusy(false); }
       }}>Cancel search</button></> : <button className="btn primary start" disabled={disabled} onClick={() => { setError(""); setSearching(true); }}>Find a game / resume</button>}
+      {searching && searchInfo && <p className="sub">Searching within {searchInfo.ratingRange} rating points · {searchInfo.waitedSeconds}s elapsed · {searchInfo.queuedPlayers} queued. The range widens while you wait.</p>}
       {error && <p role="alert">{error}</p>}
     </>}
   </div>;

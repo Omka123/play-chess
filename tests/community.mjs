@@ -13,7 +13,7 @@ const a = { id: `test-${prefix}-a`, name: "Alice" }, b = { id: `test-${prefix}-b
 const rooms = [];
 try {
   const profile = await registerPlayer(a);
-  assert.deepEqual(profile.ratings, { bullet: 1200, blitz: 1200, rapid: 1200 });
+  assert.deepEqual(profile.ratings, { bullet: 200, blitz: 200, rapid: 200 });
   await registerPlayer(b); await registerPlayer(c);
   await socialAction(a, { type: "profile", username: `alice_${prefix}`, name: "Alice Chess", avatar: "queen" });
   await assert.rejects(socialAction(b, { type: "profile", username: `alice_${prefix}`, name: "Copy", avatar: "king" }), /taken/);
@@ -37,7 +37,7 @@ try {
   assert.equal((await socialAction(c)).active, null);
   await accessRoom(matched.session.id, matched.session.token, { type: "resign" }, b);
   const ar = await registerPlayer(a), br = await registerPlayer(b);
-  assert.equal(ar.ratings.blitz, 1216); assert.equal(br.ratings.blitz, 1184);
+  assert.equal(ar.ratings.blitz, 216); assert.equal(br.ratings.blitz, 184);
   assert.equal(ar.ratedCount, 1);
   const finished = { ...stored, result: { title: "Alice wins", detail: "Resignation." }, winner: stored.users.w === a.id ? "w" : "b", finishedAt: Date.now() };
   await settleRatedGame(finished);
@@ -62,7 +62,7 @@ try {
   const progress = await savePuzzle(a, daily, move, dayKey());
   assert.ok(progress.solved.includes(daily)); assert.equal(progress.streak, 1);
   assert.equal((await savePuzzle(a, daily, move, dayKey())).streak, 1);
-  await assert.rejects(savePuzzle(a, daily, { from: "a1", to: "a8" }, dayKey()));
+  await assert.rejects(savePuzzle(a, daily, { from: "a1", to: "a1" }, dayKey()));
   assert.equal(ratingCategory(60), "bullet"); assert.equal(ratingCategory(180, 2), "blitz"); assert.equal(ratingCategory(600), "rapid");
   console.log("Passed: profiles, unique usernames, friend consent, matchmaking, private seats, idempotent ratings, direct challenges, cancellation, and verified daily puzzle streaks.");
 } finally {

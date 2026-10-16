@@ -28,6 +28,7 @@ export default function Friends({ visible = true }) {
   const [increment, setIncrement] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [connection, setConnection] = useState("Connecting…");
   const [copied, setCopied] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [view, setView] = useState(null);
@@ -52,6 +53,7 @@ export default function Friends({ visible = true }) {
   };
   const request = async (url, token, action) => {
     const response = await fetch(url, { method: action ? "POST" : "GET", cache: "no-store",
+      signal: AbortSignal.timeout(10000),
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       ...(action ? { body: JSON.stringify(action) } : {}) });
     let data;
@@ -65,6 +67,7 @@ export default function Friends({ visible = true }) {
     if (!session) return;
     let cancelled = false;
     let timer;
+    let failures = 0;
     const poll = async () => {
       const started = Date.now();
       let finished = false;
@@ -74,7 +77,7 @@ export default function Friends({ visible = true }) {
           const data = await request(`/api/rooms/${session.id}`, session.token);
           if (!cancelled && !lock.current && version === revision.current) {
             if (data.rematchSession) { saveSession(data.rematchSession); setRoom(null); setView(null); return; }
-            setRoom((previous) => ({ ...data, moves: previous && JSON.stringify(previous.moves) === JSON.stringify(data.moves) ? previous.moves : data.moves })); setError(""); finished = false;
+            setRoom((previous) => ({ ...data, moves: previous && JSON.stringify(previous.moves) === JSON.stringify(data.moves) ? previous.moves : data.moves })); setError(""); setConnection("Connected"); failures = 0; finished = false;
           }
         } catch (e) {
           if (!cancelled && version === revision.current) {
@@ -84,12 +87,12 @@ export default function Friends({ visible = true }) {
               setError(`${e.message} Create a new invite below.`);
               return;
             }
-            setError(e.message);
+            failures++; setConnection("Connection interrupted. Reconnecting… Your game is saved."); setError(e.message);
           }
         }
       }
       // Schedule from request start; avoid adding a full delay after network latency.
-      if (!cancelled && !finished) timer = setTimeout(poll, Math.max(100, 1000 - (Date.now() - started)));
+      if (!cancelled && !finished) timer = setTimeout(poll, Math.max(100, (failures ? Math.min(10000, 1000 * 2 ** failures) : document.hidden ? 5000 : 1000) - (Date.now() - started)));
     };
     poll();
     return () => { cancelled = true; clearTimeout(timer); };
@@ -161,7 +164,7 @@ export default function Friends({ visible = true }) {
     showClock: !!room?.tc, clock: room?.clocks[side] || 0, running: active && game.turn() === side, low: room?.clocks[side] < 20000 });
   const link = room?.invite ? `${window.location.origin}${window.location.pathname}?room=${room.id}#invite=${room.invite}` : "";
 
-  return <main className="layout">
+  return <main className="layout friends-layout">
     <section className="stage" aria-label="Online chess board">
       <PlayerBar {...player(top)} />
       <Board game={room ? shown : new Chess()} orient={orient} lastMove={moves[ply - 1]} myColor={room?.color}
@@ -177,27 +180,29 @@ export default function Friends({ visible = true }) {
       <p className="board-note">{room ? `You play ${room.color === "w" ? "white" : "black"}. Games expire after 24 hours.` : "A board for you. A link for your friend."}</p>
     </section>
     <aside className="panel">
-      {!session && !invite && <OnlineMatchmaking onMatch={(matched) => { setRoom(null); saveSession(matched); }} disabled={busy} />}
       {room?.result && account?.user && <p role="status">{room.historySaved === false ? "Game history could not be saved. Reload to retry before this room expires." : "Game saved to your account history."}</p>}
       {room?.result && <GameReview key={room.id} result={room.result} moves={moves} color={room.color} visible={visible} onGoto={setView}
         outcome={room.result.title === "Draw" ? "draw" : room.winner === room.color ? "win" : "loss"}
         rated={room.rated} gameId={room.id} onNewGame={reset} onRematch={() => act({ type: "rematch" })} rematchPending={room.rematchOffered} actionsBusy={busy} clockLabel={room.tc ? `${room.tc / 60} + ${room.increment || 0}` : "game"}
         selectedPly={reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewSelection.entry.ply : null}
         onSelect={(entry) => setReviewSelection(entry ? { roomId: room.id, entry } : null)} />}
-      <div className="card">
-        <span className="eyebrow">PLAY TOGETHER</span>
+      <div className={`card friend-game-card ${!session ? "play-setup friend-setup" : ""}`}>
+          <span className="eyebrow">PLAY TOGETHER</span>
+          {session && <p role="status" className="sub">{connection}</p>}
+          {session && room && !room.dailyDays && <details><summary>Share a spectator board</summary><p>Anyone with this link can watch both players’ names and moves. They cannot play.</p><button className="btn" disabled={busy} onClick={() => act({ type: "watchLink", enabled: !room.watchToken })}>{room.watchToken ? "Disable spectator link" : "Enable spectator link"}</button>{room.watchToken && <label className="field-label">Spectator link<input className="text-input" readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/watch/${room.id}#key=${room.watchToken}`} onFocus={(event) => event.target.select()} /></label>}</details>}
+          {room?.dailyDays && <p className="sub">Daily chess · {room.dailyDays} days per move · Next move due {new Date(room.moveDeadline).toLocaleString()}</p>}
         <h2>{session ? room?.result?.title || (room?.joined ? (game.turn() === room.color ? "Your move" : "Your friend’s move") : "Waiting for your friend") : invite ? "You’re invited" : "Chess is better with friends"}</h2>
         <p className="sub">{room?.result?.detail || (session ? (game.isCheck() && active ? "Check. Protect your king." : "Live moves, your own clock, and a little friendly competition.") : "Invite a friend and play from separate devices. No account needed.")}</p>
-        {!session && <>
+        {!session && <div className="friend-setup-fields">
           <label className="field-label" htmlFor="friend-name">Your name</label>
           <input id="friend-name" className="text-input" maxLength={30} value={name} readOnly={Boolean(account?.user)} placeholder="Enter your name" onChange={(e) => setName(e.target.value)} />
           {!invite && <>
-            <label className="field-label">Increment<select value={increment} onChange={(event) => setIncrement(Number(event.target.value))}><option value={0}>None</option><option value={2}>+2 seconds per move</option><option value={5}>+5 seconds per move</option></select></label>
-            <div className="label">Your pieces</div><div className="seg">{[["w", "White"], ["r", "Random"], ["b", "Black"]].map(([value, label]) => <button key={value} aria-pressed={color === value} onClick={() => setColor(value)}>{label}</button>)}</div>
-            <div className="label">Time per player</div><div className="seg">{TIMES.map((time) => <button key={time.s} aria-pressed={tc === time.s} onClick={() => setTc(time.s)}>{time.label}</button>)}</div>
+            <fieldset className="setup-field"><legend>Your pieces</legend><div className="seg setup-colors">{[["w", "White"], ["r", "Random"], ["b", "Black"]].map(([value, label]) => <button key={value} aria-pressed={color === value} onClick={() => setColor(value)}>{label}</button>)}</div></fieldset>
+            <fieldset className="setup-field"><legend>Time per player</legend><div className="seg setup-clocks">{TIMES.map((time) => <button key={time.s} aria-pressed={tc === time.s} onClick={() => setTc(time.s)}>{time.label}</button>)}</div></fieldset>
+            <label className="field-label setup-increment">Increment<select disabled={!tc} value={tc ? increment : 0} onChange={(event) => setIncrement(Number(event.target.value))}><option value={0}>None</option><option value={2}>+2 seconds per move</option><option value={5}>+5 seconds per move</option></select></label>
           </>}
           <button className="btn primary start" disabled={busy} onClick={enter}>{busy ? "Connecting…" : invite ? "Join game" : "Create invite link"}</button>
-        </>}
+        </div>}
         {session && !room && <p className="sub">Connecting to your game…</p>}
         {link && !room.joined && <div className="invite-box">
           <label className="field-label" htmlFor="invite-link">Send this link to your friend</label>
@@ -205,8 +210,9 @@ export default function Friends({ visible = true }) {
           <button className="btn primary start" onClick={async () => { try { await navigator.clipboard.writeText(link); setCopied(true); } catch { setError("Select the link above and copy it manually."); } }}>{copied ? "Link copied ✓" : "Copy invite link"}</button>
           <p className="sub">The clock starts when your friend joins.</p>
         </div>}
-        <p className="msg bad" role="status">{error}</p>
+        {error && <p className="msg bad" role="status">{error}</p>}
       </div>
+      {!session && !invite && <OnlineMatchmaking onMatch={(matched) => { setRoom(null); saveSession(matched); }} disabled={busy} />}
       {room && <div className="card">
         {account?.user && <a className="report-game-link" href={`/report?type=game&target=${room.id}`}>Report a game issue</a>}
         {room.result && <GameExport game={{ moves, names: room.names, color: room.color, tc: room.tc, increment: room.increment, result: room.result, outcome: room.result.title === "Draw" ? "draw" : room.winner === room.color ? "win" : "loss" }} fen={shown.fen()} />}

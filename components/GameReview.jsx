@@ -12,6 +12,7 @@ const remember = (key, findings) => { if (reviewCache.size >= 10) reviewCache.de
 export default function GameReview({ result, moves, color, visible = true, onGoto, onSelect, selectedPly, outcome, onNewGame, onRematch, rematchPending = false, actionsBusy = false, clockLabel, rated = false, gameId }) {
   const { data: account } = useSession();
   const [rating, setRating] = useState(null);
+  const [saveMessage, setSaveMessage] = useState("");
   const dialog = useRef(null);
   const section = useRef(null);
   const opened = useRef(false);
@@ -111,6 +112,7 @@ export default function GameReview({ result, moves, color, visible = true, onGot
         <p role="status">{review.findings.length ? `${review.findings.length} key moments to improve` : moves.length ? "No significant mistakes found at this analysis depth." : "No moves to review."}</p>
         {review.findings.length > 0 && <div className="review-counts">{["Inaccuracy", "Mistake", "Blunder"].map((label) => <div key={label} className={label.toLowerCase()}><strong>{review.findings.filter((entry) => entry.label === label).length}</strong><span>{label === "Inaccuracy" ? "Inaccuracies" : `${label}s`}</span></div>)}</div>}
         {active && <>
+          {account?.user && <><button className="btn" onClick={async () => { try { const response = await fetch("/api/platform", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "saveMistake", fen: active.fen, bestMove: active.bestMove }) }); const value = await response.json(); if (!response.ok) throw new Error(value.error); setSaveMessage("Saved to your personal practice in Training."); } catch (error) { setSaveMessage(error.message); } }}>Save to personal practice</button><p role="status">{saveMessage}</p></>}
           <div className="review-moment-nav"><button className="btn" aria-label="Previous mistake" disabled={activeIndex === 0} onClick={() => selectFinding(activeIndex - 1)}>←</button><span>Moment {activeIndex + 1} of {review.findings.length}</span><button className="btn" aria-label="Next mistake" disabled={activeIndex === review.findings.length - 1} onClick={() => selectFinding(activeIndex + 1)}>→</button></div>
           <article className={`review-moment ${active.label.toLowerCase()}`}>
             <div className="review-moment-heading"><span className="review-move-number">{Math.ceil(active.ply / 2)}{active.color === "w" ? "." : "…"} {active.played}</span><span className={`review-label ${active.label.toLowerCase()}`}>{active.label === "Blunder" ? "??" : active.label === "Mistake" ? "?" : "?!"} {active.label}</span></div>

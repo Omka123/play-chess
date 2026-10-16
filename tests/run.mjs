@@ -20,3 +20,5 @@ await import("./redisCommunity.mjs");
 await import("./playClock.mjs");
 await import("./moderation.mjs");
 await import("./sponsor.mjs");
+await import("./ratings.mjs");
+await import("./platform.mjs");
