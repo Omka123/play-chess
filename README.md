@@ -174,6 +174,14 @@ Tests cover tactical lines, run integrity, shared-study permissions, revision sc
 
 ## Roadmap implementation update (23 October 2026)
 
+## Google Analytics
+
+Production builds load the Google tag for `G-6P7MVWK6YT` once through the root layout using Next.js `afterInteractive` scripts. Development mode does not load it. Set `GOOGLE_ANALYTICS_ID` to override the measurement ID, or `GOOGLE_ANALYTICS_ENABLED=false` to disable tracking, then rebuild/redeploy. The measurement ID is public; no Analytics API secret is needed.
+
+For client-side page navigation, keep Enhanced Measurement and its browser-history page-view option enabled in the GA4 web stream. Do not add a second manual page-view handler alongside it. See [Google's SPA measurement guidance](https://developers.google.com/analytics/devguides/collection/ga4/single-page-applications) and [Next.js script guidance](https://nextjs.org/docs/app/guides/scripts). Verify actual collection using Analytics Realtime after deployment; browser blockers can prevent collection. The privacy page describes the integration. `node tests/analyticsBrowser.mjs` checks the ID and single initialization against an isolated production server on port 3100 while stubbing Google's script, so the test sends no visitor data to Analytics.
+
+## Roadmap implementation update (23 October 2026)
+
 The improvement centre now includes private opening repertoires and training insights. Repertoires support branches, notes and spaced recall; their moves are user preparation rather than engine-verified recommendations. Game review offers light/standard/deep effort and stop/restart controls. The chess board supports arrow-key focus, Enter/Space selection and Escape cancellation. Account preferences load across routes, and an offline notice plus download removal are available.
 
 For unattended clock settlement and events, configure CRON_SECRET and supervise `node scripts/maintenance.mjs` with NEXTAUTH_URL set, or schedule /api/cron/maintenance and follow its cursor pages. No worker is installed automatically. See OPERATIONS.md for deployment checks, restore drills, monitoring and privacy procedures. The GitHub Actions workflow runs tests, a build and a production browser smoke test when connected to GitHub.
