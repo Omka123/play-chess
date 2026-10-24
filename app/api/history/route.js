@@ -4,12 +4,14 @@ import { authOptions } from "@/lib/auth";
 import { saveGame } from "@/lib/gameHistory";
 import { BOTS } from "@/lib/constants";
 import { validMoveTime } from "@/lib/moveTiming";
+import { assertAccountActive } from "@/lib/moderation";
 export const runtime = "nodejs";
 export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return Response.json({ error: "Sign in to save games." }, { status: 401 });
   if (request.headers.get("origin") !== new URL(request.url).origin) return Response.json({ error: "Invalid origin." }, { status: 403 });
   try {
+    await assertAccountActive(session.user);
     const input = await request.json();
     const bot = BOTS.find((entry) => entry.id === input.botId);
     if (!bot || !/^[a-f0-9-]{36}$/.test(input.id) || !["w", "b"].includes(input.color) || !Array.isArray(input.moves) || input.moves.length > 1200 || !["board", "resign", "timeout"].includes(input.reason)) throw new Error();

@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { StockfishReview, stockfishGameReview } from "@/lib/stockfish";
 import ReviewPractice from "./ReviewPractice";
+import EvaluationGraph from "./EvaluationGraph";
 import { formatReviewScore } from "@/lib/reviewFeedback";
 import { useSession } from "next-auth/react";
 
@@ -20,6 +21,8 @@ export default function GameReview({ result, moves, color, visible = true, onGot
   const [review, setReview] = useState({ status: "loading", progress: 0, findings: [] });
   const [attempt, setAttempt] = useState(0);
   const [engineMode, setEngineMode] = useState("stockfish");
+  const [quality, setQuality] = useState("standard");
+  const [paused, setPaused] = useState(false);
   const [practice, setPractice] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [arrowMode, setArrowMode] = useState("both");
@@ -55,21 +58,23 @@ export default function GameReview({ result, moves, color, visible = true, onGot
     }
   }, [review.status, review.findings]);
   useEffect(() => {
-    if (visible && !opened.current) { dialog.current.showModal(); opened.current = true; }
     if (!visible) dialog.current?.close();
+    if (!visible || opened.current) return;
+    if (dialog.current) { dialog.current.showModal(); opened.current = true; }
   }, [visible]);
   useEffect(() => {
     let worker;
     let engine;
     let cancelled = false;
-    const cacheKey = JSON.stringify([engineMode, color, moves.map(({ from, to, promotion }) => [from, to, promotion])]);
+    if (paused) { setReview((current) => ({ ...current, status: "paused" })); return; }
+    const cacheKey = JSON.stringify([engineMode, quality, color, moves.map(({ from, to, promotion }) => [from, to, promotion])]);
     callbacks.current.onSelect?.(null);
     setPractice(null);
     if (reviewCache.has(cacheKey)) { setReview({ status: "done", ...reviewCache.get(cacheKey) }); return; }
     setReview({ status: "loading", progress: 0, findings: [] });
     if (engineMode === "stockfish") {
       try {
-        engine = new StockfishReview();
+        engine = new StockfishReview(quality === "deep" ? { movetime: 2000, depth: 22 } : quality === "light" ? { movetime: 150, depth: 12 } : {});
         stockfishGameReview(engine, moves, color, (progress) => { if (!cancelled) setReview((current) => ({ ...current, progress })); }, () => cancelled)
           .then((data) => { if (!cancelled) { remember(cacheKey, data); setReview({ status: "done", ...data }); } })
           .catch((error) => { if (!cancelled) setReview({ status: "error", error: error.message, findings: [] }); })
@@ -88,7 +93,7 @@ export default function GameReview({ result, moves, color, visible = true, onGot
       worker.postMessage({ moves, color });
     } catch { setReview({ status: "error", findings: [], error: "Game review needs browser worker support." }); }
     return () => worker?.terminate();
-  }, [moves, color, attempt, engineMode]);
+  }, [moves, color, attempt, engineMode, quality, paused]);
   const close = () => dialog.current.close();
   const backToBoard = () => { reviewRequested.current = false; close(); callbacks.current.onSelect?.(null); callbacks.current.onGoto(moves.length); };
   return <>
@@ -103,12 +108,16 @@ export default function GameReview({ result, moves, color, visible = true, onGot
     </dialog>
     <section className="card game-review" ref={section} aria-label="Post-game review">
       <div className="review-title"><span className="eyebrow">LEARN FROM YOUR GAME</span><h2>Game review</h2></div>
-      <p className="sub">{engineMode === "stockfish" ? "Stockfish 19 · Up to depth 16, limited to 0.4 seconds per position." : "Basic two-ply review. Deeper tactics may be missed."}</p>
+      <p className="sub">{engineMode === "stockfish" ? `Stockfish 19 · ${quality === "deep" ? "Up to depth 22, 2 seconds" : quality === "light" ? "Up to depth 12, 0.15 seconds" : "Up to depth 16, 0.4 seconds"} per position. Estimates depend on search limits.` : "Basic two-ply review. Deeper tactics may be missed."}</p>
+      {engineMode === "stockfish" && <label className="field-label">Review effort<select value={quality} onChange={(event) => { setQuality(event.target.value); setPaused(false); }}><option value="light">Light — lower device usage</option><option value="standard">Standard</option><option value="deep">Deep — slower review</option></select></label>}
+      {review.status === "loading" && <button className="btn" onClick={() => setPaused(true)}>Stop analysis</button>}
+      {paused && <p role="status">Analysis stopped. <button className="btn" onClick={() => setPaused(false)}>Restart analysis</button></p>}
       <label className="field-label">Analysis engine <select value={engineMode} onChange={(event) => { setEngineMode(event.target.value); setPractice(null); }}><option value="stockfish">Stockfish (deeper review)</option><option value="basic">Basic (quick review)</option></select></label>
       <p className="review-legend"><span className="mistake">Red: played move</span><span className="best">Green: better move</span></p>
       {review.status === "loading" && <div className="review-loading"><p role="status">Finding your key moments… {review.progress}/{moves.length}</p><progress value={review.progress} max={Math.max(1, moves.length)} aria-label="Game analysis progress" /><p className="sub">Your board stays available while we analyse.</p></div>}
       {review.status === "error" && <div className="review-error"><p role="alert">{review.error}</p><div className="row"><button className="btn" onClick={() => setAttempt((value) => value + 1)}>Retry review</button>{engineMode === "stockfish" && <button className="btn" onClick={() => setEngineMode("basic")}>Use basic review</button>}</div></div>}
       {review.status === "done" && <>
+        <EvaluationGraph evaluations={review.evaluations} onGoto={(ply) => { callbacks.current.onSelect?.(null); callbacks.current.onGoto(ply); }} />
         <p role="status">{review.findings.length ? `${review.findings.length} key moments to improve` : moves.length ? "No significant mistakes found at this analysis depth." : "No moves to review."}</p>
         {review.findings.length > 0 && <div className="review-counts">{["Inaccuracy", "Mistake", "Blunder"].map((label) => <div key={label} className={label.toLowerCase()}><strong>{review.findings.filter((entry) => entry.label === label).length}</strong><span>{label === "Inaccuracy" ? "Inaccuracies" : `${label}s`}</span></div>)}</div>}
         {active && <>

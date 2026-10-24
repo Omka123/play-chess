@@ -497,6 +497,8 @@ header.game-nav > * { flex-shrink:0; }
 .winner-crown svg { width: 100%; height: 100%; }
 @keyframes winner-reveal { from { opacity: 0; transform: translateY(6px) scale(.8); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .winner-crown, .sq.winning-king::after { animation: none; } }
+.sq.mated-king { z-index:4; }
+.mate-badge { position:absolute; top:3%; right:3%; z-index:10; width:29%; aspect-ratio:1; display:grid; place-items:center; background:#c83742; color:#fff; border:2px solid #fff; border-radius:50%; font:bold clamp(12px,3.8cqw,24px)/1 system-ui; box-shadow:0 2px 5px #0005; pointer-events:none; }
 .game-review { --review-red: #e65b54; --review-orange: #df9640; --review-yellow: #c09a39; --review-green: #71ab49; }
 .review-title h2 { margin: 5px 0 10px; }
 .review-loading, .review-error { border-radius: 10px; padding: 14px; background: var(--surface-2); }
@@ -700,6 +702,33 @@ main.match-layout { max-width:1120px; grid-template-columns:minmax(0,500px) 300p
 .moves > button.cur .move-time { color:inherit; }
 .move-time-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 10px; font-size:12px; font-weight:700; }
 .move-time-heading > span { color:var(--muted); font-size:10px; font-weight:400; }
+.chess-symbol { display:none; font-family:var(--symbols); font-size:clamp(24px,10cqw,65px); line-height:1; }
+:root[data-piece-style="symbols"] .chess-piece { display:none; }
+:root[data-piece-style="symbols"] .chess-symbol { display:block; }
+.chess-symbol.w { color:#fffdf5; text-shadow:1px 0 #292a24,-1px 0 #292a24,0 1px #292a24,0 -1px #292a24; }
+.chess-symbol.b { color:#242721; text-shadow:0 1px #f4f0d5; }
+:root[data-coordinates="off"] .frame-coords,:root[data-coordinates="off"] .coord { visibility:hidden; }
+:root[data-board-theme="blue"] .sq.l { background:#dce6ee; }
+:root[data-board-theme="blue"] .sq.d { background:#6084a4; }
+:root[data-board-theme="purple"] .sq.l { background:#e8dff0; }
+:root[data-board-theme="purple"] .sq.d { background:#9068aa; }
+:root[data-board-theme="wood"] .sq.l { background:#e7c99d; }
+:root[data-board-theme="wood"] .sq.d { background:#92603c; }
+:root[data-board-theme="green"] .sq.l { background:#eeeed2; }
+:root[data-board-theme="green"] .sq.d { background:#769656; }
+.improvement-hub .card { padding:20px; margin:18px 0; }
+.improvement-hub select,.improvement-hub textarea { color:var(--ink); background:var(--surface-2); border:1px solid var(--line); border-radius:6px; max-width:100%; padding:9px; font:inherit; }
+.improvement-hub textarea { width:100%; min-height:100px; box-sizing:border-box; }
+.improvement-hub .hub-tabs .primary { width:auto; }
+.improvement-links { margin-top:36px; border-top:1px solid var(--line); padding-top:18px; }
+.daily-plan { padding-left:26px; }
+.daily-plan li { margin:20px 0; padding:14px; border-left:3px solid var(--line); }
+.daily-plan li.complete { border-color:var(--accent); background:var(--accent-soft); }
+.daily-plan .btn,.course-card .btn { display:block; margin:10px 0; }
+.course-card progress { width:100%; accent-color:var(--accent); }
+.course-card li { margin:14px 0; }
+.evaluation-graph svg { width:100%; height:auto; color:var(--ink); }
+@media(max-width:760px) { .improvement-hub .hub-tabs .btn { font-size:13px; } .improvement-hub .card { padding:15px; } }
 .match-custom > summary .color-icon { width:23px; height:23px; }
 .match-custom[open] > summary { margin-bottom:16px; }
 .match-custom .bot-category { margin-top:12px; }
@@ -731,3 +760,5 @@ main.match-layout { max-width:1120px; grid-template-columns:minmax(0,500px) 300p
   .match-panel { position:static; height:auto; max-height:none; width:min(100%,500px); margin:0 auto; }
   .match-panel-content { overflow:visible; padding:18px; }
 }
+:where(.sq):focus-visible { outline: 3px solid #ffc857; outline-offset: -3px; z-index: 2; }
+.network-status { position: sticky; top: 0; z-index: 200; padding: 10px 16px; background: #533f0f; color: #fff4cd; border-bottom: 1px solid #b99130; font-size: 14px; }

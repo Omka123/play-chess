@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import FairPlayEvidence from "./FairPlayEvidence";
 export default function ModerationDashboard({ initial }) {
   const [data, setData] = useState(initial);
   const [note, setNote] = useState("");
@@ -25,7 +26,7 @@ export default function ModerationDashboard({ initial }) {
     <section><h2>Reports</h2><label className="field-label">Status<select value={filter} onChange={(event) => setFilter(event.target.value)}>{["open", "resolved", "dismissed", "all"].map((value) => <option key={value}>{value}</option>)}</select></label>
       {!reports.length && <p>No reports with this status.</p>}
       {reports.map((report) => <article className="card moderation-report" key={report.id}><span className="eyebrow">{report.type} · {report.status}</span><h3>{report.reason.replaceAll("-", " ")}</h3><p className="report-details">{report.details}</p><p><strong>Target:</strong> <code>{report.target}</code></p><p className="sub">Reporter: {report.reporterId} · Reference: {report.id}</p>
-        {report.evidence && <details><summary>Game evidence</summary><p>{report.evidence.names.w} vs {report.evidence.names.b}</p><p>{report.evidence.result?.detail || "Game in progress"}</p><p className="report-details">{report.evidence.moves.map((move, index) => `${index % 2 === 0 ? `${Math.floor(index / 2) + 1}. ` : ""}${move.san}`).join(" ")}</p></details>}
+        {report.evidence && <details><summary>Game evidence</summary><p>{report.evidence.names.w} vs {report.evidence.names.b}</p><p>{report.evidence.result?.detail || "Game in progress"}</p><p className="report-details">{report.evidence.moves.map((move, index) => `${index % 2 === 0 ? `${Math.floor(index / 2) + 1}. ` : ""}${move.san}`).join(" ")}</p><FairPlayEvidence moves={report.evidence.moves} /></details>}
         {report.moderatorNote && <p>Decision note: {report.moderatorNote}</p>}
         <div className="row">{report.status === "open" && <><button className="btn" disabled={busy} onClick={() => act({ type: "resolve", reportId: report.id })}>Resolve report</button><button className="btn" disabled={busy} onClick={() => act({ type: "dismiss", reportId: report.id })}>Dismiss report</button></>}
           {report.targetUserId && <button className="btn danger" disabled={busy} onClick={() => act({ type: "suspend", userId: report.targetUserId })}>Suspend player</button>}

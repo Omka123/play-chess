@@ -41,7 +41,7 @@ function ChessPiece({ type, color }) {
     </>,
   };
 
-  return <svg className="chess-piece" viewBox="0 0 72 76" aria-hidden="true" focusable="false">
+  return <><span className={`chess-symbol ${color}`} aria-hidden="true">{({ w: { k: "♔", q: "♕", r: "♖", b: "♗", n: "♘", p: "♙" }, b: { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" } })[color][type]}</span><svg className="chess-piece" viewBox="0 0 72 76" aria-hidden="true" focusable="false">
     <g fill={fill} stroke={edge} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
       {shapes[type]}
       {type !== "p" && <>
@@ -49,6 +49,6 @@ function ChessPiece({ type, color }) {
         <path d="M18 61 H54" fill="none" stroke={detail} strokeWidth="1.5" />
       </>}
     </g>
-  </svg>;
+  </svg></>;
 }
 export default memo(ChessPiece);

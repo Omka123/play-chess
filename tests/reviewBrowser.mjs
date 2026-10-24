@@ -29,10 +29,14 @@ try {
   const moves = [["f2", "f3"], ["e7", "e5"], ["g2", "g4"], ["d8", "h4"]];
   for (let ply = 0; ply < 3; ply++) await post(ply % 2 ? black : white, `/api/rooms/${room.id}`, { type: "move", from: moves[ply][0], to: moves[ply][1], ply }, ply % 2 ? guest.token : room.token);
   await page.getByRole("gridcell", { name: "White pawn on g4", exact: true }).waitFor();
+  assert.equal(await page.locator(".mated-king:visible").count(), 0);
   assert.equal(await page.getByRole("dialog").count(), 0);
   await post(black, `/api/rooms/${room.id}`, { type: "move", from: "d8", to: "h4", ply: 3 }, guest.token);
   await page.getByRole("dialog").waitFor();
   await page.getByRole("heading", { name: "You Lost", exact: true }).waitFor();
+  assert.equal(await page.locator('.mated-king[data-sq="e1"]:visible').count(), 1);
+  assert.equal(await page.locator(".mate-badge:visible").count(), 1);
+  assert.equal(await page.locator(".mated-king > .piece:visible").evaluate((element) => getComputedStyle(element).animationName), "none");
   await page.waitForFunction(() => [...document.querySelectorAll(".result-quality strong")].every((element) => !element.textContent.includes("—")));
   assert.equal(await page.locator('[data-sq="h4"]:visible').getAttribute("aria-label"), "Black queen on h4");
   assert.equal(await page.locator(".review-arrows:visible").count(), 0);
@@ -52,6 +56,7 @@ try {
   await page.getByRole("button", { name: "Move 2 g4, Blunder", exact: true }).waitFor({ timeout: 45000 });
   await page.getByRole("button", { name: "Move 2 g4, Blunder", exact: true }).click();
   assert.equal(await page.locator(".review-arrows:visible .board-arrow").count(), 2);
+  assert.equal(await page.locator(".mated-king:visible").count(), 0);
   assert.equal(await page.locator(".review-square-badge.mistake:visible").textContent(), "??");
   assert.match(await page.locator(".review-moment").textContent(), /forced checkmate/);
   assert.match(await page.locator(".review-move-comparison").textContent(), /M/);

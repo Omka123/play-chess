@@ -31,6 +31,7 @@ function SlidingPiece({ move, orient, onFinish }) {
  */
 export default function Board({ game, orient, lastMove, hint, canMove, myColor, onMove, arrows = [], canPremove = false, onPremove, premove, winner }) {
   const [selected, setSelected] = useState(null);
+  const [focusedSquare, setFocusedSquare] = useState("e2");
   const [promo, setPromo] = useState(null);
   const [ghost, setGhost] = useState(null);
   const dragRef = useRef(null);
@@ -137,6 +138,7 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
   const flip = orient === "b";
   const checkSq = game.isCheck() ? kingSquare(game, game.turn()) : null;
   const winningColor = winner || (game.isCheckmate() ? game.turn() === "w" ? "b" : "w" : null);
+  const matedColor = game.isCheckmate() ? game.turn() : null;
   const squares = [];
   for (let i = 0; i < 8; i++) {
     for (let j = 0; j < 8; j++) {
@@ -154,15 +156,23 @@ export default function Board({ game, orient, lastMove, hint, canMove, myColor, 
       if (reviewMark) cls += ` review-square-${reviewMark.kind}`;
       const winningKing = p?.type === "k" && p.color === winningColor;
       if (winningKing) cls += " winning-king";
-      const label = `${p ? `${colorName(p.color)} ${PIECE_NAMES[p.type]} on ` : ""}${sq}${winningKing ? ", winner" : ""}`;
+      const losingKing = p?.type === "k" && p.color === matedColor;
+      if (losingKing) cls += " mated-king";
+      const label = `${p ? `${colorName(p.color)} ${PIECE_NAMES[p.type]} on ` : ""}${sq}${winningKing ? ", winner" : losingKing ? ", checkmated" : ""}`;
       squares.push(
-        <div key={sq} className={cls} data-sq={sq} role="gridcell" aria-label={label} onPointerDown={(e) => onDown(e, sq)}>
+        <div key={sq} className={cls} data-sq={sq} role="gridcell" tabIndex={focusedSquare === sq ? 0 : -1} onFocus={() => setFocusedSquare(sq)} aria-selected={selected === sq} aria-label={label} onKeyDown={(event) => {
+          if (["Enter", " "].includes(event.key)) { event.preventDefault(); if (!canMove && !canPremove) return; if (selected && targets[sq]) attempt(selected, sq); else setSelected(game.get(sq)?.color === myColor ? sq : null); }
+          if (event.key === "Escape") setSelected(null);
+          const delta = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -8, ArrowDown: 8 }[event.key];
+          if (delta) { event.preventDefault(); const cells = [...boardRef.current.querySelectorAll("[data-sq]")]; const index = cells.indexOf(event.currentTarget); const next = index + delta; if (next >= 0 && next < 64 && (Math.abs(delta) === 8 || Math.floor(index / 8) === Math.floor(next / 8))) cells[next].focus(); }
+        }} onPointerDown={(e) => onDown(e, sq)}>
           {targets[sq] && (p ? <span className="ring" /> : <span className="dot" />)}
           {p && (
             <span className={`piece ${p.color}${ghost && ghost.from === sq ? " dragging" : ""}${slides.some((move) => move.fen === fen && move.to === sq) ? " slide-hidden" : ""}`}><ChessPiece type={p.type} color={p.color} /></span>
           )}
           {winningKing && <span className="winner-crown" title={`${colorName(p.color)} wins`} aria-hidden="true"><svg viewBox="0 0 32 28" fill="none"><path d="m4 8 6 5 6-9 6 9 6-5-3 14H7L4 8Z" fill="currentColor" stroke="#80520a" strokeWidth="1.5" strokeLinejoin="round"/><path d="M8 25h16" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><circle cx="4" cy="6" r="2" fill="currentColor"/><circle cx="16" cy="3" r="2" fill="currentColor"/><circle cx="28" cy="6" r="2" fill="currentColor"/></svg></span>}
           {reviewMark?.badge && <span className={`review-square-badge ${reviewMark.kind}`} title={reviewMark.label}>{reviewMark.badge}</span>}
+          {losingKing && <span className="mate-badge" title={`${colorName(p.color)} is checkmated`} aria-hidden="true">×</span>}
         </div>
       );
     }

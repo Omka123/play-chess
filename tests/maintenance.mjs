@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import { settleExpiredClock } from "../lib/maintenance.js";
+import { trainingInsights } from "../lib/trainingInsights.js";
+const room = () => ({ joined: true, moves: [], tc: 60, clocks: { w: 1000, b: 60000 }, updated: 10000, names: { w: "White", b: "Black" }, result: null });
+const expired = room(); assert.equal(settleExpiredClock(expired, 11000), true); assert.equal(expired.winner, "b"); assert.equal(expired.clocks.w, 0); assert.equal(expired.finishedAt, 11000); assert.equal(settleExpiredClock(expired, 12000), false);
+const live = room(); assert.equal(settleExpiredClock(live, 10500), false); assert.equal(live.clocks.w, 1000); assert.equal(live.updated, 10000);
+const waiting = { ...room(), joined: false }; assert.equal(settleExpiredClock(waiting, 999999), false);
+const untimed = { ...room(), tc: 0 }; assert.equal(settleExpiredClock(untimed, 999999), false);
+const daily = { ...room(), tc: 0, dailyDays: 1, moveDeadline: 20000, moves: [{ from: "e2", to: "e4" }] }; assert.equal(settleExpiredClock(daily, 19999), false); assert.equal(settleExpiredClock(daily, 20000), true); assert.equal(daily.winner, "w"); assert.match(daily.result.detail, /deadline/);
+const rewind = room(); assert.equal(settleExpiredClock(rewind, 9000), false);
+const stats = trainingInsights({ academyAttempts: { a: { theme: "Fork", correct: true, durationMs: 3000 }, b: { theme: "Fork", correct: false, hinted: true, durationMs: 5000 } }, mistakes: [{ stage: 2, dueAt: 20000 }, { stage: 0, dueAt: 1 }], dailyTraining: { "2026-10-23": { puzzles: ["a", "b"] } } }, 10000);
+assert.equal(stats.themes[0].accuracy, 50); assert.equal(stats.themes[0].averageMs, 4000); assert.equal(stats.due, 1); assert.equal(stats.retained, 1); assert.equal(stats.days[0].solved, 2);
+console.log("Passed: unattended clock/deadline settlement, idempotency, waiting/untimed guards and factual training insights.");

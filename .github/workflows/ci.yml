@@ -1,0 +1,33 @@
+name: ChessNexa checks
+on:
+  push:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXTAUTH_SECRET: ci-only-session-key-never-use-in-production
+      NEXTAUTH_URL: http://localhost:3100
+      GAMBIT_DATA_DIRECTORY: /tmp/chessnexa-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run ops:restore-drill
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Browser smoke tests
+        run: |
+          npm start -- --port 3100 > /tmp/chessnexa-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://localhost:3100/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          BROWSER_CHANNEL=chromium node tests/improvementBrowser.mjs

@@ -23,3 +23,8 @@ await import("./sponsor.mjs");
 await import("./ratings.mjs");
 await import("./platform.mjs");
 await import("./moveTiming.mjs");
+await import("./academy.mjs");
+await import("./accountBackups.mjs");
+await import("./maintenance.mjs");
+await import("./repertoire.mjs");
+await import("./operationsCheck.mjs");

@@ -336,7 +336,7 @@ export default function Gambit() {
         <div className="sidebar-extra">
         <Link href={account?.user ? "/account" : "/login"} className="sidebar-history"><span className="nav-icon"><ColorIcon name="history" size={29} /></span>Game history<span className="nav-detail">Review your past games</span></Link>
         <Link href="/hub" className="sidebar-history"><span className="nav-icon"><ColorIcon name="friends" size={29} /></span>Player hub<span className="nav-detail">Clubs, events and daily chess</span></Link>
-        <Link href="/training" className="sidebar-history"><span className="nav-icon"><ColorIcon name="puzzle" size={29} /></span>Training<span className="nav-detail">Puzzles and learning progress</span></Link>
+        <Link href="/improve" className="sidebar-history"><span className="nav-icon"><ColorIcon name="puzzle" size={29} /></span>Training<span className="nav-detail">Puzzles and learning progress</span></Link>
         <Link href="/analysis" className="sidebar-history"><span className="nav-icon"><ColorIcon name="learn" size={29} /></span>Analysis studio<span className="nav-detail">Import PGN or FEN</span></Link>
         </div>
         <Link href="/learn" className="sidebar-learn"><ColorIcon name="learn" />Learn chess <span aria-hidden="true">→</span></Link>

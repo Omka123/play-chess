@@ -6,5 +6,6 @@ node_modules
 .gambit-users
 .gambit-history
 .gambit-community
+.gambit-backups
 public/engine
 .npm-cache

@@ -30,6 +30,7 @@ export default function Friends({ visible = true }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [connection, setConnection] = useState("Connecting…");
+  const [clockNow, setClockNow] = useState(0);
   const [copied, setCopied] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [view, setView] = useState(null);
@@ -61,7 +62,7 @@ export default function Friends({ visible = true }) {
     try { data = await response.json(); }
     catch { throw new Error("The game server returned an invalid response. Restart the local server and try again."); }
     if (!response.ok) throw Object.assign(new Error(data.error || "Could not connect. Please try again."), { status: response.status });
-    return data;
+    return { ...data, receivedAt: performance.now() };
   };
 
   useEffect(() => {
@@ -93,7 +94,7 @@ export default function Friends({ visible = true }) {
         }
       }
       // Schedule from request start; avoid adding a full delay after network latency.
-      if (!cancelled && !finished) timer = setTimeout(poll, Math.max(100, (failures ? Math.min(10000, 1000 * 2 ** failures) : document.hidden ? 5000 : 1000) - (Date.now() - started)));
+      if (!cancelled && !finished) timer = setTimeout(poll, Math.max(100, (failures ? Math.min(10000, 1000 * 2 ** failures) : document.hidden ? 5000 : 500) - (Date.now() - started)));
     };
     poll();
     return () => { cancelled = true; clearTimeout(timer); };
@@ -153,6 +154,7 @@ export default function Friends({ visible = true }) {
   const top = orient === "w" ? "b" : "w";
   const info = capturedInfo(shown);
   const active = room?.joined && !room.result;
+  useEffect(() => { if (!active || !room?.tc) return; const timer = setInterval(() => setClockNow(performance.now()), 100); return () => clearInterval(timer); }, [active, room?.tc]);
   useEffect(() => {
     if (!premove || premove.roomId !== room?.id || !active || busy || lock.current || game.turn() !== room.color) return;
     setPremove(null);
@@ -162,7 +164,7 @@ export default function Friends({ visible = true }) {
   }, [premove, room?.id, active, busy, moves]); // eslint-disable-line react-hooks/exhaustive-deps
   const player = (side) => ({ name: room?.names[side] || "Waiting for a friend", avatar: side.toUpperCase(),
     captured: info.lostBy[side === "w" ? "b" : "w"], diff: side === "w" ? info.diff : -info.diff,
-    showClock: !!room?.tc, clock: room?.clocks[side] || 0, running: active && game.turn() === side, low: room?.clocks[side] < 20000 });
+    showClock: !!room?.tc, clock: Math.max(0, (room?.clocks[side] || 0) - (active && !busy && game.turn() === side && room?.receivedAt ? Math.max(0, clockNow - room.receivedAt) : 0)), running: active && game.turn() === side, low: room?.clocks[side] < 20000 });
   const link = room?.invite ? `${window.location.origin}${window.location.pathname}?room=${room.id}#invite=${room.invite}` : "";
 
   return <main className="layout friends-layout match-layout">

@@ -8,10 +8,16 @@
     "test": "node --experimental-default-type=module tests/run.mjs",
     "dev": "node scripts/dev.mjs",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "ops:check": "node --experimental-default-type=module scripts/operations-check.mjs",
+    "ops:smoke": "node scripts/operations-smoke.mjs",
+    "ops:restore-drill": "node --experimental-default-type=module scripts/restore-drill.mjs",
+    "ops:maintenance": "node scripts/maintenance.mjs",
+    "ops:backup": "node --experimental-default-type=module scripts/backup.mjs"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
+    "chessops": "^0.15.1",
     "next": "^15.0.0",
     "next-auth": "^4.24.15",
     "react": "^19.0.0",

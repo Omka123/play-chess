@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import { operationsCheck } from "../lib/operationsCheck.js";
+const valid = { NEXTAUTH_URL: "https://chess.example.com", GOOGLE_CLIENT_ID: "example.apps.googleusercontent.com", GOOGLE_CLIENT_SECRET: "secret-value-123456789", NEXTAUTH_SECRET: "s".repeat(40), UPSTASH_REDIS_REST_URL: "https://storage.example.com", UPSTASH_REDIS_REST_TOKEN: "private-token", CRON_SECRET: "c".repeat(40), GAMBIT_BACKUP_KEY: Buffer.alloc(32, 7).toString("base64"), SUPPORT_EMAIL: "support@example.com", MODERATOR_EMAILS: "mod@example.com,second@example.com" };
+assert.equal(operationsCheck(valid).ok, true);
+assert.equal(operationsCheck({}).ok, false);
+for (const [key, value] of [["NEXTAUTH_URL", "http://chess.example.com"], ["NEXTAUTH_URL", "https://user:secret@chess.example.com"], ["NEXTAUTH_URL", "https://chess.example.com/path"], ["UPSTASH_REDIS_REST_URL", "http://storage.example.com"], ["NEXTAUTH_SECRET", "short"], ["CRON_SECRET", "short"], ["GAMBIT_BACKUP_KEY", "invalid"], ["MODERATOR_EMAILS", "not-an-email"]]) assert.equal(operationsCheck({ ...valid, [key]: value }).ok, false, key);
+const report = JSON.stringify(operationsCheck(valid));
+for (const key of ["GOOGLE_CLIENT_SECRET", "NEXTAUTH_SECRET", "UPSTASH_REDIS_REST_TOKEN", "CRON_SECRET", "GAMBIT_BACKUP_KEY"]) assert.ok(!report.includes(valid[key]), "reports must not disclose credentials");
+assert.equal(operationsCheck({ ...valid, NEXTAUTH_URL: "http://localhost:3000", UPSTASH_REDIS_REST_URL: "", UPSTASH_REDIS_REST_TOKEN: "" }, { production: false }).ok, true);
+console.log("Passed: operations preflight validation, production transport checks, local storage mode and secret-free reports.");
