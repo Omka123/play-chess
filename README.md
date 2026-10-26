@@ -28,11 +28,11 @@ REST API reference: https://upstash.com/docs/redis/features/restapi
 
 ## Content and AdSense review preparation
 
-The public site includes a learning hub, ten original chess guides, interactive exercises, and About, Contact, Privacy and Terms pages. Cards shown during games are unpaid links to relevant ChessNexa guides. Learning pages can show an optional, clearly labelled direct sponsor card. No live AdSense script is installed and no approval or earnings are guaranteed.
+The public site includes a learning hub, ten original chess guides, interactive exercises, and About, Contact, Privacy and Terms pages. Cards shown during games are unpaid links to relevant ChessNexa guides. Learning pages can show an optional, clearly labelled direct sponsor card. Production builds include the AdSense script and account-verification metadata for `ca-pub-9915062612412572`. The publisher authorization is served at `/ads.txt`. Development mode skips the advertising script. Approval and earnings are not guaranteed.
 
 Before publishing for review, set `SITE_URL` to your public HTTPS origin, `SITE_OPERATOR` to your real public operator name, and `SUPPORT_EMAIL` to a monitored public contact address. Redeploy after configuring them. `SITE_URL` supplies the sitemap and homepage canonical URL; without it, the sitemap intentionally has no invented domain. Review all editorial and policy text for accuracy against your deployment.
 
-When adding AdSense, use your actual publisher account, update privacy disclosures to describe Google/third-party advertising cookies, and configure a Google-certified consent platform where required for EEA/UK/Switzerland traffic. Do not publish a fake ads.txt publisher ID. Google evaluates the live site; passing tests is not evidence of approval.
+After deployment, verify the site in AdSense and configure Auto ads in that account if you want automatic placements. The supplied code is the account script; no manual ad-unit slot IDs were supplied or invented. Configure the applicable consent messages in AdSense Privacy & messaging. See [Google's site connection guide](https://support.google.com/adsense/answer/7584263) and [ads.txt guide](https://support.google.com/adsense/answer/12171612). Google evaluates the live site; passing tests is not evidence of approval.
 
 Official guidance: https://support.google.com/adsense/answer/7299563
 

@@ -8,7 +8,10 @@ try {
  const context=await browser.newContext();
  const token=await encode({secret:process.env.NEXTAUTH_SECRET || 'local-browser-test-session-key-for-chessnexa-only',token:{userId:`improve-${randomUUID()}`,name:'Improvement tester',sub:randomUUID(),email:'improve@example.test'},maxAge:3600});
  await context.addCookies([{name:'next-auth.session-token',value:token,url:origin,httpOnly:true,sameSite:'Lax'}]);
- const page=await context.newPage();page.setDefaultTimeout(45000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await context.newPage();
+ await page.route("https://pagead2.googlesyndication.com/**", route => route.fulfill({contentType:"application/javascript",body:"/* AdSense test stub. */"}));
+ await page.route("https://www.googletagmanager.com/**", route => route.fulfill({contentType:"application/javascript",body:"/* Analytics test stub. */"}));
+page.setDefaultTimeout(45000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(`${origin}/improve`);await page.getByText(/Puzzle rating 200/).waitFor();
  await page.locator('select').filter({has:page.locator('option[value="fork-queen"]')}).selectOption('fork-queen');
  for(const [from,to] of [['c3','e4'],['e4','d6']]) {await page.locator(`[data-sq="${from}"]`).click();await page.locator(`[data-sq="${to}"]`).click();if(from==='c3')await page.waitForTimeout(700);}

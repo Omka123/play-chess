@@ -3,6 +3,8 @@ import { chromium } from '@playwright/test';
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 try {
  const page = await browser.newPage(); let requests = 0;
+ await page.route("https://pagead2.googlesyndication.com/**", route => route.fulfill({contentType:"application/javascript",body:"/* AdSense test stub. */"}));
+
  await page.route('https://www.googletagmanager.com/gtag/js**', async route => { requests++; await route.fulfill({contentType:'application/javascript',body:'/* Analytics test stub: no visitor data is sent. */'}); });
  await page.route(/https:\/\/[^/]*google-analytics\.com\//, route => route.abort());
  await page.goto('http://localhost:3100/privacy');
