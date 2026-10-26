@@ -167,7 +167,7 @@ export default function Friends({ visible = true }) {
     showClock: !!room?.tc, clock: Math.max(0, (room?.clocks[side] || 0) - (active && !busy && game.turn() === side && room?.receivedAt ? Math.max(0, clockNow - room.receivedAt) : 0)), running: active && game.turn() === side, low: room?.clocks[side] < 20000 });
   const link = room?.invite ? `${window.location.origin}${window.location.pathname}?room=${room.id}#invite=${room.invite}` : "";
 
-  return <main className="layout friends-layout match-layout">
+  return <main className={`layout friends-layout match-layout${!session ? " is-setup" : ""}`}>
     <section className="stage" aria-label="Online chess board">
       <PlayerBar {...player(top)} />
       <Board game={room ? shown : new Chess()} orient={orient} lastMove={moves[ply - 1]} myColor={room?.color}

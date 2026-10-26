@@ -30,7 +30,7 @@ const initialPlay = {
   stage: "setup", // "setup" | "game"
   moves: [], view: 0, human: "w", orient: "w",
   active: false, over: false, result: null, thinking: false,
-  botId: 3, color: "w", tc: 0, increment: 0, clocks: { w: 0, b: 0 }, gameId: 0,
+  botId: 3, color: "w", tc: 600, increment: 0, clocks: { w: 0, b: 0 }, gameId: 0,
 };
 
 const sideOf = (idx) => new Chess(PUZZLES[idx].fen).turn();
@@ -40,6 +40,7 @@ const freshPuzzle = (idx) => ({
 const botById = (id) => BOTS.find((b) => b.id === id);
 
 export default function Gambit() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: account } = useSession();
   const [mode, setMode] = useState("play");
   const [reviewSelection, setReviewSelection] = useState(null);
@@ -303,36 +304,39 @@ export default function Gambit() {
       if (play.stage === "game") {
         if (color === play.human) { name = account?.user?.name || "You"; avatar = name[0]; }
         else { name = botById(play.botId).name; avatar = name[0]; }
-      } else { name = colorName(color); avatar = color.toUpperCase(); }
+      } else { name = color === play.orient ? account?.user?.name || "Player" : "Opponent"; avatar = name[0]; }
     } else {
       name = colorName(color) + (color === puzzleSide ? " (you)" : "");
       avatar = color.toUpperCase();
     }
     const opp = color === "w" ? "b" : "w";
-    const showClock = mode === "play" && play.stage === "game" && play.tc > 0;
+    const showClock = mode === "play" && play.tc > 0;
     return {
       name, avatar,
       captured: info.lostBy[opp],
       diff: color === "w" ? info.diff : -info.diff,
       showClock,
-      clock: play.clocks[color],
-      running: showClock && play.active && !play.over && full.turn() === color && play.moves.length >= 2,
-      low: play.clocks[color] < 20000,
+      clock: play.stage === "setup" ? play.tc * 1000 : play.clocks[color],
+      running: showClock && play.stage === "game" && play.active && !play.over && full.turn() === color && play.moves.length >= 2,
+      low: play.stage === "game" && play.clocks[color] < 20000,
     };
   };
 
   return (
     <>
-      <header className="top game-nav">
+      <header className={`top game-nav${mobileMenuOpen ? " menu-open" : ""}`}>
         <div className="brand">
           <span className="mark" aria-hidden="true"><ColorIcon name="knight" size={36} /></span>
           ChessNexa
         </div>
+        <button className="btn mobile-menu-toggle" aria-label={mobileMenuOpen ? "Close menu" : "Menu"} aria-expanded={mobileMenuOpen} aria-controls="mobile-navigation-options" onClick={() => setMobileMenuOpen((open) => !open)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>
+        <div className="mobile-header-account">{account?.user ? <Link className="btn" href="/account">My account</Link> : <><Link className="btn primary" href="/login">Sign up</Link><Link className="btn" href="/login">Log in</Link></>}</div>
         <nav className="tabs" role="tablist" aria-label="Modes">
           <button role="tab" aria-selected={mode === "play"} onClick={() => setMode("play")}><span className="nav-icon"><ColorIcon name="play" size={29} /></span>Play<span className="nav-detail">Challenge a computer</span></button>
           <button role="tab" aria-selected={mode === "friends"} onClick={() => setMode("friends")}><span className="nav-icon"><ColorIcon name="friends" size={29} /></span>Friends<span className="nav-detail">Invite & play online</span></button>
           <button role="tab" aria-selected={mode === "puzzle"} onClick={() => setMode("puzzle")}><span className="nav-icon"><ColorIcon name="puzzle" size={29} /></span>Puzzles<span className="nav-detail">Train your tactics</span></button>
         </nav>
+        <div id="mobile-navigation-options" className={`mobile-navigation-options${mobileMenuOpen ? " is-open" : ""}`}>
         <div className="sidebar-extra">
         <Link href={account?.user ? "/account" : "/login"} className="sidebar-history"><span className="nav-icon"><ColorIcon name="history" size={29} /></span>Game history<span className="nav-detail">Review your past games</span></Link>
         <Link href="/hub" className="sidebar-history"><span className="nav-icon"><ColorIcon name="friends" size={29} /></span>Player hub<span className="nav-detail">Clubs, events and daily chess</span></Link>
@@ -341,6 +345,7 @@ export default function Gambit() {
         </div>
         <Link href="/learn" className="sidebar-learn"><ColorIcon name="learn" />Learn chess <span aria-hidden="true">→</span></Link>
         <button className="theme-btn" onClick={toggleTheme} aria-label="Toggle light and dark theme" title="Toggle theme">&#9680;</button>
+        </div>
       </header>
 
       <div className="sidebar-footer"><span className="sidebar-knight" aria-hidden="true">♞</span><strong>Your next great move.</strong><span>A little chess, every day.</span></div>
@@ -349,7 +354,7 @@ export default function Gambit() {
         <AccountMenu />
       </section>
       <div hidden={mode !== "friends"}><Friends visible={mode === "friends"} /></div>
-      <main className="layout match-layout" hidden={mode === "friends"}>
+      <main className={`layout match-layout${mode === "play" && play.stage === "setup" ? " is-setup" : ""}`} hidden={mode === "friends"}>
         <section className="stage" aria-label="Chess board">
           <PlayerBar {...barProps(top)} />
           <Board

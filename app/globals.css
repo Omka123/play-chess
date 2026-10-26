@@ -762,3 +762,69 @@ main.match-layout { max-width:1120px; grid-template-columns:minmax(0,500px) 300p
 }
 :where(.sq):focus-visible { outline: 3px solid #ffc857; outline-offset: -3px; z-index: 2; }
 .network-status { position: sticky; top: 0; z-index: 200; padding: 10px 16px; background: #533f0f; color: #fff4cd; border-bottom: 1px solid #b99130; font-size: 14px; }
+.responsive-ad { width: 100%; min-width: 0; margin: 160px 0 40px; min-height: 280px; }
+.responsive-ad-label { display: block; color: #bfbab3; text-align: center; font-size: 11px; margin-bottom: 8px; }
+.responsive-ad .adsbygoogle { width: 100%; min-height: 250px; }
+.mobile-menu-toggle { display: none; }
+.mobile-navigation-options { display: contents; }
+@media (max-width: 760px) {
+  header.game-nav { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; }
+  .game-nav .brand { font-size: 20px; min-width: 0; }
+  .game-nav .mobile-menu-toggle { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; font-size: 13px; padding: 8px 12px; }
+  .game-nav nav.tabs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; margin: 0; gap: 6px; }
+  .game-nav nav.tabs button { display: flex; justify-content: center; align-items: center; gap: 5px; min-width: 0; min-height: 44px; padding: 8px 4px; font-size: 14px; }
+  .game-nav nav.tabs .nav-icon { display: inline-flex; margin: 0; }
+  .game-nav nav.tabs .color-icon { width: 21px; height: 21px; }
+  .game-nav .mobile-navigation-options { display: none; }
+  .game-nav .mobile-navigation-options.is-open { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; }
+  .game-nav .sidebar-extra { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .game-nav .sidebar-extra .sidebar-history { display: flex; align-items: center; gap: 5px; min-height: 44px; padding: 8px; font-size: 12px; }
+  .game-nav .sidebar-history .nav-icon { margin: 0; flex-shrink: 0; }
+  .game-nav .sidebar-history .color-icon { width: 20px; height: 20px; }
+  .game-nav .sidebar-learn { min-height: 40px; }
+  .game-nav .theme-btn { margin: 0; width: 44px; height: 40px; }
+  .game-nav ~ .intro { gap: 6px; padding: 8px 12px; }
+  .game-nav ~ .intro .account-menu { gap: 6px; font-size: 12px; }
+  .game-nav ~ .intro .account-menu .btn { min-height: 36px; padding: 7px 9px; font-size: 12px; }
+  .game-nav ~ .intro .account-menu .color-icon { width: 18px; height: 18px; }
+  main.match-layout.is-setup > .match-panel { grid-row: 1; }
+  main.match-layout.is-setup > .stage { grid-row: 2; }
+  .is-setup .match-panel-tabs a, .is-setup .match-panel-tabs button { min-height: 48px; padding: 6px 3px; gap: 3px; }
+  .is-setup .match-panel-content { padding: 12px; gap: 10px; }
+  .is-setup .match-panel-content .play-setup > h2 { display: none; }
+  .is-setup .match-panel-content .play-setup > .sub { margin: 0 0 10px; }
+  .is-setup .match-panel-footer { display: none; }
+}
+.mobile-header-account { display: none; }
+@media (max-width: 760px) {
+  header.game-nav { grid-template-columns: 30px minmax(0, 1fr) auto; min-height: 44px; padding: 4px 8px; gap: 5px; }
+  .game-nav .brand { grid-column: 2; grid-row: 1; font-size: 18px; gap: 2px; }
+  .game-nav .brand .mark { width: 22px; height: 28px; }
+  .game-nav .brand .color-icon { width: 22px; height: 28px; }
+  .game-nav .mobile-menu-toggle { grid-column: 1; grid-row: 1; min-height: 36px; padding: 4px; background: transparent; border: 0; }
+  .game-nav .mobile-header-account { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: 5px; }
+  .mobile-header-account .btn { min-height: 32px; padding: 6px 9px; font-size: 11px; white-space: nowrap; }
+  .game-nav:not(.menu-open) nav.tabs { display: none; }
+  .game-nav nav.tabs, .game-nav .mobile-navigation-options.is-open { grid-column: 1 / -1; }
+  .game-nav ~ .intro { display: none; }
+  .game-nav.menu-open ~ .intro { display: flex; }
+  .game-nav.menu-open ~ .intro h1 { display: none; }
+  main.match-layout { padding: 0 8px 20px; gap: 6px; }
+  main.match-layout > .stage, main.match-layout > .match-panel { width: min(100%, 500px, max(240px, calc(100svh - 300px))); margin-inline: auto; }
+  main.match-layout > .stage, main.match-layout.is-setup > .stage { grid-row: 1; gap: 3px; }
+  main.match-layout > .match-panel, main.match-layout.is-setup > .match-panel { grid-row: 2; }
+  .match-layout .bar { min-height: 30px; gap: 7px; padding: 2px 0; }
+  .match-layout .avatar { width: 28px; height: 28px; font-size: 14px; }
+  .match-layout .bar .name { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .match-layout .bar .caps:empty { display: none; }
+  .match-layout .bar .caps { font-size: 12px; min-height: 0; }
+  .match-layout .bar .clock { min-width: 82px; padding: 3px 9px; font-size: 22px; line-height: 1.1; }
+  .match-layout .match-panel-tabs a, .match-layout .match-panel-tabs button { min-height: 44px; padding: 5px 3px; gap: 2px; font-size: 10px; }
+  .match-layout .match-panel-tabs .color-icon { width: 18px; height: 18px; }
+  .is-setup .match-panel-content { padding: 8px; }
+  .is-setup .play-setup > .sub { display: none; }
+  .is-setup .match-clock-select { min-height: 42px; padding: 9px 10px; font-size: 14px; }
+  .is-setup .play-setup .match-start { min-height: 46px; margin: 8px 0 14px; font-size: 19px; }
+  .is-setup .match-custom > summary { min-height: 44px; height: auto; padding: 10px 6px; font-size: 14px; }
+  .is-setup .match-action { min-height: 44px; font-size: 14px; }
+}
