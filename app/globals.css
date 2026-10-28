@@ -833,3 +833,6 @@ main.match-layout { max-width:1120px; grid-template-columns:minmax(0,500px) 300p
 .lesson-walkthrough details { margin-top: 16px; }
 .lesson-walkthrough li { margin: 12px 0; }
 @media (max-width: 600px) { .lesson-walkthrough { padding: 12px; } }
+.lesson-topics { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 24px 0; }
+.lesson-topics a { color: var(--accent); }
+.lesson-notation { white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; background: var(--surface-2); border-radius: 6px; }

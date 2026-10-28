@@ -28,7 +28,7 @@ REST API reference: https://upstash.com/docs/redis/features/restapi
 
 ## Content and AdSense review preparation
 
-The public site includes a learning hub, ten original chess guides, interactive exercises, and About, Contact, Privacy and Terms pages. Cards shown during games are unpaid links to relevant ChessNexa guides. Learning pages can show an optional, clearly labelled direct sponsor card. Production builds include the AdSense script and account-verification metadata for `ca-pub-9915062612412572`. The publisher authorization is served at `/ads.txt`. Development mode skips the advertising script. Approval and earnings are not guaranteed.
+The public site includes a learning hub, fifteen original chess guides, interactive exercises, and About, Contact, Privacy and Terms pages. Cards shown during games are unpaid links to relevant ChessNexa guides. Learning pages can show an optional, clearly labelled direct sponsor card. Production builds include the AdSense script and account-verification metadata for `ca-pub-9915062612412572`. The publisher authorization is served at `/ads.txt`. Development mode skips the advertising script. Approval and earnings are not guaranteed.
 
 Before publishing for review, set `SITE_URL` to your public HTTPS origin, `SITE_OPERATOR` to your real public operator name, and `SUPPORT_EMAIL` to a monitored public contact address. Redeploy after configuring them. `SITE_URL` supplies the sitemap and homepage canonical URL; without it, the sitemap intentionally has no invented domain. Review all editorial and policy text for accuracy against your deployment.
 

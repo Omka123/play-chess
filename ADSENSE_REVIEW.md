@@ -25,9 +25,15 @@ Checked `https://chessnexa.in` on 28 October 2026:
 - Added an editorial-methodology page, footer links and sitemap entry explaining example validation, limitations and correction handling without inventing expert credentials.
 - Added guide canonical URLs and related worked-example links.
 
-These are local changes until deployed. The existing ten guides are not a guarantee of approval, and writing more articles solely to reach an arbitrary count is not a substitute for useful, accurate material.
+These are local changes until deployed. The guide library is not a guarantee of approval, and writing more articles solely to reach an arbitrary count is not a substitute for useful, accurate material.
 
-Verification: automated chess tests passed, including all four worked examples and their final results. Browser checks passed for stepping through castling and the fork capture, resetting examples, distinguishing mate/stalemate, guide canonical URLs, the editorial page, corrected About text and a 390px layout. External Google scripts were stubbed during browser checks so no advertising impressions were generated.
+## Additional practical guides
+
+Five further guides bring the library to fifteen: absolute/relative pins, en passant, back-rank checkmate, the passed-pawn square rule, and SAN/FEN/PGN notation. Four include solvable board exercises; four include explained replayable lines. The notation guide includes an importable sample PGN. The learning index links directly to these subjects. Automated checks validate en-passant pawn removal, the illegal king recapture in the pin example, the back-rank mating move, promotion, and the PGN's final position.
+
+All five new pages were browser-checked at 390px width; all four new exercises were solved successfully. This confirms their implementation, not AdSense acceptance or independent editorial approval. Read the new material before publishing it for review.
+
+Verification: automated chess tests passed, including the worked examples and their final results. Browser checks passed for stepping through castling and the fork capture, resetting examples, distinguishing mate/stalemate, guide canonical URLs, the editorial page, corrected About text and a 390px layout. External Google scripts were stubbed during browser checks so no advertising impressions were generated.
 
 ## Before requesting another review
 
