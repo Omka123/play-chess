@@ -828,3 +828,8 @@ main.match-layout { max-width:1120px; grid-template-columns:minmax(0,500px) 300p
   .is-setup .match-custom > summary { min-height: 44px; height: auto; padding: 10px 6px; font-size: 14px; }
   .is-setup .match-action { min-height: 44px; font-size: 14px; }
 }
+.lesson-walkthrough { margin: 32px 0; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.lesson-walkthrough .row { flex-wrap: wrap; }
+.lesson-walkthrough details { margin-top: 16px; }
+.lesson-walkthrough li { margin: 12px 0; }
+@media (max-width: 600px) { .lesson-walkthrough { padding: 12px; } }
