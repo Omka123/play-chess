@@ -15,6 +15,8 @@ import OnlineMatchmaking from "./OnlineMatchmaking";
 import MatchPanel from "./MatchPanel";
 import MatchPromotion from "./MatchPromotion";
 import GameExport from "./GameExport";
+import ConnectionStatus from "./ConnectionStatus";
+import { reconnectDelay, displayedRoomClock } from "@/lib/connection";
 
 export default function Friends({ visible = true }) {
   const { data: account } = useSession();
@@ -29,7 +31,8 @@ export default function Friends({ visible = true }) {
   const [increment, setIncrement] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [connection, setConnection] = useState("Connecting…");
+  const [connection, setConnection] = useState({ status: "connecting", retryAt: 0, rttMs: null });
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
   const [clockNow, setClockNow] = useState(0);
   const [copied, setCopied] = useState(false);
   const [flipped, setFlipped] = useState(false);
@@ -54,6 +57,7 @@ export default function Friends({ visible = true }) {
     window.history.replaceState(null, "", `?room=${value.id}`);
   };
   const request = async (url, token, action) => {
+    const started = performance.now();
     const response = await fetch(url, { method: action ? "POST" : "GET", cache: "no-store",
       signal: AbortSignal.timeout(10000),
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -62,7 +66,7 @@ export default function Friends({ visible = true }) {
     try { data = await response.json(); }
     catch { throw new Error("The game server returned an invalid response. Restart the local server and try again."); }
     if (!response.ok) throw Object.assign(new Error(data.error || "Could not connect. Please try again."), { status: response.status });
-    return { ...data, receivedAt: performance.now() };
+    return { ...data, receivedAt: performance.now(), serverTurn: data.moves?.length % 2 ? "b" : "w", rttMs: performance.now() - started };
   };
 
   useEffect(() => {
@@ -70,16 +74,20 @@ export default function Friends({ visible = true }) {
     let cancelled = false;
     let timer;
     let failures = 0;
+    let inFlight = false;
     const poll = async () => {
+      if (cancelled || inFlight) return;
+      if (!navigator.onLine) { setConnection({ status: "offline", retryAt: 0, rttMs: null }); timer = setTimeout(poll, 1000); return; }
       const started = Date.now();
       let finished = false;
       if (!lock.current) {
+        inFlight = true;
         const version = revision.current;
         try {
           const data = await request(`/api/rooms/${session.id}`, session.token);
           if (!cancelled && !lock.current && version === revision.current) {
             if (data.rematchSession) { saveSession(data.rematchSession); setRoom(null); setView(null); return; }
-            setRoom((previous) => ({ ...data, moves: previous && JSON.stringify(previous.moves) === JSON.stringify(data.moves) ? previous.moves : data.moves })); setError(""); setConnection("Connected"); failures = 0; finished = false;
+            setRoom((previous) => ({ ...data, moves: previous && JSON.stringify(previous.moves) === JSON.stringify(data.moves) ? previous.moves : data.moves })); setError(""); setConnection({ status: "connected", retryAt: 0, rttMs: data.rttMs }); failures = 0; finished = false;
           }
         } catch (e) {
           if (!cancelled && version === revision.current) {
@@ -89,16 +97,21 @@ export default function Friends({ visible = true }) {
               setError(`${e.message} Create a new invite below.`);
               return;
             }
-            failures++; setConnection("Connection interrupted. Reconnecting… Your game is saved."); setError(e.message);
+            failures++; setConnection({ status: "retrying", retryAt: Date.now() + reconnectDelay(failures), rttMs: null }); setError(e.message);
           }
-        }
+        } finally { inFlight = false; }
       }
       // Schedule from request start; avoid adding a full delay after network latency.
-      if (!cancelled && !finished) timer = setTimeout(poll, Math.max(100, (failures ? Math.min(10000, 1000 * 2 ** failures) : document.hidden ? 5000 : 500) - (Date.now() - started)));
+      if (!cancelled && !finished) timer = setTimeout(poll, failures ? reconnectDelay(failures) : Math.max(100, (document.hidden ? 5000 : 500) - (Date.now() - started)));
     };
+    const resume = () => { clearTimeout(timer); poll(); };
+    const offline = () => setConnection({ status: "offline", retryAt: 0, rttMs: null });
+    const visible = () => { if (!document.hidden) resume(); };
+    setConnection({ status: "connecting", retryAt: 0, rttMs: null });
+    window.addEventListener("online", resume); window.addEventListener("offline", offline); document.addEventListener("visibilitychange", visible);
     poll();
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [session]);
+    return () => { cancelled = true; clearTimeout(timer); window.removeEventListener("online", resume); window.removeEventListener("offline", offline); document.removeEventListener("visibilitychange", visible); };
+  }, [session, connectionAttempt]);
 
   const enter = async () => {
     if (lock.current) return;
@@ -132,6 +145,7 @@ export default function Friends({ visible = true }) {
     }
     try {
       const data = await request(`/api/rooms/${session.id}`, session.token, action);
+      setConnection({ status: "connected", retryAt: 0, rttMs: data.rttMs });
       if (data.rematchSession) { saveSession(data.rematchSession); setRoom(null); }
       else setRoom((current) => ({ ...data, moves: current && JSON.stringify(current.moves) === JSON.stringify(data.moves) ? current.moves : data.moves }));
       setView(null);
@@ -156,15 +170,15 @@ export default function Friends({ visible = true }) {
   const active = room?.joined && !room.result;
   useEffect(() => { if (!active || !room?.tc) return; const timer = setInterval(() => setClockNow(performance.now()), 100); return () => clearInterval(timer); }, [active, room?.tc]);
   useEffect(() => {
-    if (!premove || premove.roomId !== room?.id || !active || busy || lock.current || game.turn() !== room.color) return;
+    if (!premove || premove.roomId !== room?.id || !active || busy || lock.current || connection.status !== "connected" || game.turn() !== room.color) return;
     setPremove(null);
     try { const position = buildGame(undefined, moves); position.move({ from: premove.from, to: premove.to, promotion: premove.promotion }); }
     catch { return; }
     act({ type: "move", from: premove.from, to: premove.to, promotion: premove.promotion, ply: moves.length });
-  }, [premove, room?.id, active, busy, moves]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [premove, room?.id, active, busy, moves, connection.status]); // eslint-disable-line react-hooks/exhaustive-deps
   const player = (side) => ({ name: room?.names[side] || "Waiting for a friend", avatar: side.toUpperCase(),
     captured: info.lostBy[side === "w" ? "b" : "w"], diff: side === "w" ? info.diff : -info.diff,
-    showClock: !!room?.tc, clock: Math.max(0, (room?.clocks[side] || 0) - (active && !busy && game.turn() === side && room?.receivedAt ? Math.max(0, clockNow - room.receivedAt) : 0)), running: active && game.turn() === side, low: room?.clocks[side] < 20000 });
+    showClock: !!room?.tc, clock: displayedRoomClock(room, side, clockNow), running: active && game.turn() === side, low: room?.clocks[side] < 20000 });
   const link = room?.invite ? `${window.location.origin}${window.location.pathname}?room=${room.id}#invite=${room.invite}` : "";
 
   return <main className={`layout friends-layout match-layout${!session ? " is-setup" : ""}`}>
@@ -173,8 +187,8 @@ export default function Friends({ visible = true }) {
       <Board game={room ? shown : new Chess()} orient={orient} lastMove={moves[ply - 1]} myColor={room?.color}
         winner={room?.result && ply === moves.length ? room.winner : null}
         arrows={room?.result && reviewSelection?.roomId === room.id && ply === reviewSelection.entry.ply - 1 ? reviewArrows(reviewSelection.entry, shown.fen()) : []}
-        canMove={!!active && !busy && ply === moves.length && game.turn() === room.color}
-        canPremove={!!active && !busy && ply === moves.length && game.turn() !== room.color}
+        canMove={!!active && !busy && connection.status === "connected" && ply === moves.length && game.turn() === room.color}
+        canPremove={!!active && !busy && connection.status === "connected" && ply === moves.length && game.turn() !== room.color}
         premove={active && premove?.roomId === room.id ? premove : null}
         onPremove={(from, to, promotion) => setPremove({ from, to, promotion, roomId: room.id })}
         onMove={(from, to, promotion) => act({ type: "move", from, to, promotion, ply: moves.length })} />
@@ -186,7 +200,7 @@ export default function Friends({ visible = true }) {
       {room?.result && account?.user && <p role="status">{room.historySaved === false ? "Game history could not be saved. Reload to retry before this room expires." : "Game saved to your account history."}</p>}
       <div className={`card friend-game-card ${!session ? "play-setup friend-setup" : ""}`}>
           <span className="eyebrow">PLAY TOGETHER</span>
-          {session && <p role="status" className="sub">{connection}</p>}
+          {session && <ConnectionStatus connection={connection} retry={() => setConnectionAttempt((attempt) => attempt + 1)} />}
           {session && room && !room.dailyDays && <details><summary>Share a spectator board</summary><p>Anyone with this link can watch both players’ names and moves. They cannot play.</p><button className="btn" disabled={busy} onClick={() => act({ type: "watchLink", enabled: !room.watchToken })}>{room.watchToken ? "Disable spectator link" : "Enable spectator link"}</button>{room.watchToken && <label className="field-label">Spectator link<input className="text-input" readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/watch/${room.id}#key=${room.watchToken}`} onFocus={(event) => event.target.select()} /></label>}</details>}
           {room?.dailyDays && <p className="sub">Daily chess · {room.dailyDays} days per move · Next move due {new Date(room.moveDeadline).toLocaleString()}</p>}
         <h2>{session ? room?.result?.title || (room?.joined ? (game.turn() === room.color ? "Your move" : "Your friend’s move") : "Waiting for your friend") : invite ? "You’re invited" : "Chess is better with friends"}</h2>

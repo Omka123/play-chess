@@ -76,3 +76,19 @@ Alternatively call `GET /api/cron/maintenance` with `Authorization: Bearer <secr
 On production builds, download lessons, disconnect, reload a downloaded lesson and solve a local tactic. Confirm private API responses are absent from Cache Storage. Remove downloads, reload and confirm caches/worker removal. Check Chrome/Edge and available mobile browsers, including upgrades from an older service worker.
 
 Use Tab to enter the chess board, arrow keys to move focus, Enter/Space to select and move, and Escape to cancel selection. Check promotion choices, visible focus, screen-reader square labels, mobile touch input, long translated text and reduced-motion preferences.
+
+## Guaranteed local browser-test storage
+
+For isolated browser tests, explicitly set `GAMBIT_LOCAL_STORAGE=true` and point `GAMBIT_DATA_DIRECTORY` at a newly created temporary directory in the server process. This override refuses to run on Vercel or without an explicit directory. Clearing Redis variables alone is insufficient on Windows because Next.js can reload them from `.env.local`.
+
+As a second safeguard, set the test process's Redis URL to `https://127.0.0.1:1` and its token to `blocked-test-storage`. These nonempty placeholders prevent dotenv from restoring configured credentials; if the local override fails, storage requests fail against loopback rather than contact the configured service. Use a fresh terminal for normal development. These settings are only for test processes, not hosting configuration.
+
+
+## MongoDB storage
+
+MongoDB is supported for accounts, community state, games and history. See [MONGODB_MIGRATION.md](MONGODB_MIGRATION.md) for verified copy status, production cutover, backup compatibility and rollback limits. Set server-only `GAMBIT_STORAGE=mongodb`, `MONGODB_URI` and `MONGODB_DB`; legacy Redis remains available with `GAMBIT_STORAGE=redis`.
+
+
+## Owner administration
+
+See [ADMIN_PANEL.md](ADMIN_PANEL.md). The private `/admin` page and `/api/admin` require both server-only `ADMIN_USER_ID` and `ADMIN_EMAIL` to match the signed-in Google account. Configure both in hosting and redeploy. Moderator membership never grants admin access.

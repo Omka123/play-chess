@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "db:migrate": "node --experimental-default-type=module scripts/migrate-mongodb.mjs",
+    "db:upgrade-documents": "node --experimental-default-type=module scripts/upgrade-mongodb-documents.mjs",
+    "test:mongodb": "node --experimental-default-type=module tests/mongodb.integration.mjs",
     "predev": "node scripts/prepare-stockfish.mjs",
     "prebuild": "node scripts/prepare-stockfish.mjs",
     "test": "node --experimental-default-type=module tests/run.mjs",
@@ -18,6 +21,7 @@
   "dependencies": {
     "chess.js": "^1.4.0",
     "chessops": "^0.15.1",
+    "mongodb": "^6.21.0",
     "next": "^15.0.0",
     "next-auth": "^4.24.15",
     "react": "^19.0.0",

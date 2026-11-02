@@ -1,6 +1,6 @@
 # ChessNexa feature roadmap
 
-Updated: 23 October 2026
+Updated: 28 October 2026
 
 This is the implementation checklist for the chess platform discussed in this project. Existing features are recorded separately so they are not rebuilt unnecessarily. An implemented feature does not mean its production services are configured or that it matches every capability of another platform.
 
@@ -37,9 +37,10 @@ Status: `[x]` implemented baseline; `[ ]` remaining work. Priorities: P0 = produ
 - [x] Separate rated matchmaking categories with idempotent rating settlement.
 - [x] Provide authenticated maintenance scanning for abandoned live games and expired daily deadlines without participant requests.
 - [ ] **P0:** Run and monitor the maintenance worker or external scheduler in production.
-- [ ] **P1:** Add explicit reconnect/offline status, reconnect countdowns and tested clock reconciliation.
+- [x] Add connection state, retry countdowns, immediate reconnection controls, offline move blocking and confirmed-clock projection tests.
 - [ ] **P1:** Improve real-time delivery and measure latency before adding clock lag compensation.
-- [ ] **P1:** Expand bot strength calibration, playing styles and adjustable thinking speed.
+- [x] Add adjustable bot thinking pace and modest attacking/development move preferences.
+- [ ] **P1:** Calibrate bot strength against a measured benchmark; no verified Elo is claimed.
 - [ ] **P2:** Add configurable challenge clocks and player-defined rating ranges where not already exposed.
 
 ## 3. Game history and review
@@ -67,11 +68,13 @@ Status: `[x]` implemented baseline; `[ ]` remaining work. Priorities: P0 = produ
 - [ ] **P1:** Expand the puzzle library with licensed/original content, difficulty calibration and editorial review.
 - [ ] **P1:** Support multiple sound defensive replies and alternative correct continuations in multi-move puzzles.
 - [x] Add training insights for latest-attempt theme success, revision stages and recent daily activity.
-- [ ] **P1:** Add historical attempt series and calibrated improvement trends beyond latest-attempt summaries.
-- [ ] **P2:** Add dedicated time-management drills, endgame exercises and opening-repertoire practice.
+- [x] Store bounded tactic/revision histories and compare recent fourteen-day practice windows.
+- [ ] **P1:** Develop calibrated improvement trends that account for puzzle difficulty and retries.
+- [x] Add a server-timed 15-second-per-position drill and an endgame-mate practice mode; repertoire recall already exists.
+- [ ] **P2:** Expand endgame training beyond mate patterns into assessed conversion/defence exercises.
 - [ ] **P2:** Add multiplayer puzzle races with authoritative clocks and reconnect handling.
 - [ ] **P2:** Translate the full application and review explanations into Hindi/Marathi with human review.
-- [ ] **P2:** Add richer lesson checkpoints and prerequisite validation for structured courses.
+- [x] Add understanding checkpoints for all fifteen guides and separate server-enforced assessed course progression.
 
 ## 5. Analysis, openings and insights
 
@@ -92,8 +95,10 @@ Status: `[x]` implemented baseline; `[ ]` remaining work. Priorities: P0 = produ
 - [x] Collaborative studies with chapters, branches, comments, invitation codes and editor removal.
 - [x] Opt-in practice partners matched by training goal and consent-based invitations.
 - [x] Revocable live spectator links.
-- [ ] **P1:** Improve shared-study synchronization, conflict recovery and revision history.
-- [ ] **P2:** Add study roles, read-only sharing and moderated discovery.
+- [x] Preserve tab-local comment drafts across reloads/polling, require conflict review, and keep the latest 100 edit/comment revisions.
+- [ ] **P1:** Add complete branch snapshots/rollback and real-time study delivery beyond polling.
+- [x] Add owner/editor/viewer roles, owner-only rotated invitations and authenticated read-only sharing.
+- [ ] **P2:** Add moderated public study discovery.
 - [ ] **P2:** Add club management roles and richer event discovery.
 - [ ] **P2:** Add optional game chat only alongside reporting, blocking, retention and moderation controls.
 - [ ] **P3:** Add integrated coaching calls or scheduling-provider integration if requested.
@@ -105,9 +110,10 @@ Status: `[x]` implemented baseline; `[ ]` remaining work. Priorities: P0 = produ
 - [x] Unrated 5+2 event games and ready-player arena pairing.
 - [x] Local Chess960, King of the Hill and Three-check.
 - [ ] **P0:** Configure and verify an external scheduler for unattended event advancement.
-- [ ] **P1:** Add organizer recovery tools, withdrawal handling and event lifecycle notifications.
-- [ ] **P1:** Expand pairing tests for unusual participant counts, blocked players and interrupted games.
-- [ ] **P2:** Add configurable event clocks, durations, eligibility and tie-break rules.
+- [x] Add organizer retry/end controls, safe withdrawals preserving scores and creation/game-ready/finish notices.
+- [x] Add odd-player, blocked-pairing, withdrawn-player and configurable tie-break tests.
+- [ ] **P1:** Broaden high-concurrency event stress tests; missing-room recovery now has a regression test.
+- [x] Add configurable event clocks/increments, arena durations, registration rating eligibility and tie-break selection.
 - [ ] **P2:** Add online variant rooms, persisted history and variant-specific matchmaking.
 - [ ] **P2:** Replace the random variant bot with a compatible engine where available.
 - [ ] **P3:** Add further variants after rules, UI and engine support are selected.
@@ -123,7 +129,8 @@ Status: `[x]` implemented baseline; `[ ]` remaining work. Priorities: P0 = produ
 - [ ] **P1:** Complete screen-reader, promotion focus and contrast audit.
 - [ ] **P1:** Test long labels, translated text, touch promotion, small screens and landscape layouts.
 - [x] Add a global offline notice explaining local practice and server clocks, plus offline-download removal.
-- [ ] **P1:** Improve reconnect countdowns and protect unsaved annotations from refresh/conflicts.
+- [x] Add online-game reconnect countdowns and preserve unsaved shared-study comments across reloads/conflicts.
+- [ ] **P1:** Extend draft recovery to other unsaved analysis annotations.
 - [x] Supply 192px/512px raster app icons alongside the SVG manifest icon.
 - [ ] **P2:** Verify installation and platform metadata across supported mobile browsers.
 - [ ] **P3:** Consider native mobile applications after the responsive web experience is stable.
@@ -159,7 +166,7 @@ Status: `[x]` implemented baseline; `[ ]` remaining work. Priorities: P0 = produ
 2. Improve reconnect behavior, accessibility and multi-move training correctness.
 3. Expand reviewed puzzle/course content and recurring-mistake insights.
 4. Strengthen community/event recovery and shared-study synchronization.
-5. Add opening repertoires, online variants and other P2 expansion work.
+5. Expand repertoires, add online variants and continue other P2 expansion work.
 6. Reassess optional integrations and P3 work using actual player feedback.
 
 ## Completion checklist for each feature
@@ -173,8 +180,12 @@ Status: `[x]` implemented baseline; `[ ]` remaining work. Priorities: P0 = produ
 
 This roadmap is a project planning artifact, not a claim of complete feature parity with Chess.com or any other service.
 
-## Implementation update ? 23 October 2026
+## Implementation update - 23 October 2026
 
 This delivery adds maintenance scanning/worker, cross-route preferences, configurable cancellable review, keyboard board moves, training insights, opening repertoires, offline notices/removal, CI and operator procedures. Items still unchecked remain outstanding; external setup and optional integrations are not silently marked complete. See OPERATIONS.md for deployment, monitoring, backups and privacy procedures.
 
 Operations follow-up adds executable configuration checks, read-only smoke probes, a synthetic restore drill and npm commands. Local health/authentication probes and a maintenance cycle passed. Production deployment, monitoring, retained backup keys, actual backup recovery, support/moderator contact settings and scheduler supervision remain pending; see the dated verification checklist in OPERATIONS.md.
+
+## Implementation update - 28 October 2026
+
+Added reconnect/RTT feedback and offline move blocking, confirmed-clock projection, configurable bot pace/preferences, historical tactic/revision summaries, checkpoints for all fifteen lessons, assessed course prerequisites, shared-study viewer/editor roles and invitation rotation, tab-local draft recovery and comment revisions, configurable automatic event settings/withdrawals/recovery, alternate curated fork replies, and timed/endgame practice modes. These are tested baselines; unchecked development and production setup remain outstanding. Basic self-reported lesson completion is retained separately from assessed course progress.

@@ -25,12 +25,14 @@ import GameExport from "./GameExport";
 import ColorIcon from "./ColorIcon";
 import { clockAfterMove, tickPlayClock } from "@/lib/playClock";
 import { elapsedMoveTime } from "@/lib/moveTiming";
+import { BOT_SPEEDS, BOT_STYLES, thinkingDelay } from "@/lib/botPreferences";
 
 const initialPlay = {
   stage: "setup", // "setup" | "game"
   moves: [], view: 0, human: "w", orient: "w",
   active: false, over: false, result: null, thinking: false,
   botId: 3, color: "w", tc: 600, increment: 0, clocks: { w: 0, b: 0 }, gameId: 0,
+  botSpeed: "normal", botStyle: "balanced",
 };
 
 const sideOf = (idx) => new Chess(PUZZLES[idx].fen).turn();
@@ -65,7 +67,7 @@ export default function Gambit() {
       const savedTheme = localStorage.getItem("gambit:theme");
       document.documentElement.dataset.theme = savedTheme === "light" ? "light" : "dark";
       const pr = JSON.parse(localStorage.getItem("gambit:prefs") || "null");
-      if (pr) setPlay((p) => ({ ...p, botId: pr.botId || p.botId, color: pr.color || p.color, tc: typeof pr.tc === "number" ? pr.tc : p.tc, increment: [0, 2, 5].includes(pr.increment) ? pr.increment : 0 }));
+      if (pr) setPlay((p) => ({ ...p, botId: pr.botId || p.botId, color: pr.color || p.color, tc: typeof pr.tc === "number" ? pr.tc : p.tc, increment: [0, 2, 5].includes(pr.increment) ? pr.increment : 0, botSpeed: BOT_SPEEDS[pr.botSpeed] ? pr.botSpeed : "normal", botStyle: BOT_STYLES[pr.botStyle] ? pr.botStyle : "balanced" }));
       const s = JSON.parse(localStorage.getItem("gambit:solved") || "null");
       if (Array.isArray(s)) setSolved(s);
     } catch { /* storage unavailable */ }
@@ -75,9 +77,9 @@ export default function Gambit() {
     if (!loaded) return;
     try {
       localStorage.setItem("gambit:solved", JSON.stringify(solved));
-      localStorage.setItem("gambit:prefs", JSON.stringify({ botId: play.botId, color: play.color, tc: play.tc, increment: play.increment }));
+      localStorage.setItem("gambit:prefs", JSON.stringify({ botId: play.botId, color: play.color, tc: play.tc, increment: play.increment, botSpeed: play.botSpeed, botStyle: play.botStyle }));
     } catch { /* storage unavailable */ }
-  }, [loaded, solved, play.botId, play.color, play.tc, play.increment]);
+  }, [loaded, solved, play.botId, play.color, play.tc, play.increment, play.botSpeed, play.botStyle]);
 
   /* ---------- derived position ---------- */
   const t = mode === "play" ? play : puzzle;
@@ -115,7 +117,7 @@ export default function Gambit() {
     const gid = play.gameId;
     const ply = play.moves.length;
     const fen = full.fen();
-    const bot = botById(play.botId);
+    const bot = { ...botById(play.botId), style: play.botStyle };
     let cancelled = false;
     let pending = true;
     setPlay((p) => ({ ...p, thinking: true }));
@@ -138,14 +140,14 @@ export default function Gambit() {
           result: over ? gameResult(r.game, p.human, bot.name) : null,
         };
       });
-    }, 1400 + Math.random() * 600);
+    }, thinkingDelay(play.botSpeed));
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
       if (pending) killWorker();
     };
-  }, [mode, play.stage, play.active, play.over, play.gameId, play.moves.length, play.human, play.botId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode, play.stage, play.active, play.over, play.gameId, play.moves.length, play.human, play.botId, play.botSpeed, play.botStyle]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------- clocks ---------- */
   useEffect(() => {
@@ -190,7 +192,7 @@ export default function Gambit() {
 
   const newGameSetup = () => {
     killWorker();
-    setPlay((p) => ({ ...initialPlay, botId: p.botId, color: p.color, tc: p.tc, increment: p.increment, gameId: p.gameId + 1 }));
+    setPlay((p) => ({ ...initialPlay, botId: p.botId, color: p.color, tc: p.tc, increment: p.increment, botSpeed: p.botSpeed, botStyle: p.botStyle, gameId: p.gameId + 1 }));
   };
 
   const onPlayMove = (from, to, promo) => {

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import FairPlayEvidence from "./FairPlayEvidence";
-export default function ModerationDashboard({ initial }) {
+export default function ModerationDashboard({ initial, endpoint = "/api/moderation" }) {
   const [data, setData] = useState(initial);
   const [note, setNote] = useState("");
   const [search, setSearch] = useState("");
@@ -14,9 +14,9 @@ export default function ModerationDashboard({ initial }) {
     if (note.trim().length < 5) { setError("Add a moderation note before choosing an action."); return; }
     setBusy(true); setError(""); setNotice("");
     try {
-      const response = await fetch("/api/moderation", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...action, note }) });
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...action, note }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.error);
-      const refresh = await fetch("/api/moderation", { cache: "no-store" }); const next = await refresh.json(); if (!refresh.ok) throw new Error(next.error);
+      const refresh = await fetch(endpoint, { cache: "no-store" }); const next = await refresh.json(); if (!refresh.ok) throw new Error(next.error);
       setData(next); setNote(""); setNotice("Action saved to the moderation log.");
     } catch (error) { setError(error.message); } finally { setBusy(false); }
   }

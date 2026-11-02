@@ -5,6 +5,7 @@ import { BOTS, TIMES } from "@/lib/constants";
 import ColorIcon from "./ColorIcon";
 import Link from "next/link";
 import MoveNotation from "./MoveNotation";
+import { BOT_SPEEDS, BOT_STYLES } from "@/lib/botPreferences";
 
 export function MoveList({ moves, view, onGoto }) {
   const ref = useRef(null);
@@ -81,6 +82,9 @@ export default function PlayPanel({ play, turn, inCheck, onPrefs, onStart, onRem
         </fieldset>
 
         <label className="field-label setup-increment">Increment<select value={play.increment || 0} disabled={!play.tc} onChange={(event) => onPrefs({ increment: Number(event.target.value) })}><option value={0}>None</option><option value={2}>+2 seconds per move</option><option value={5}>+5 seconds per move</option></select></label>
+        <label className="field-label">Bot thinking pace<select value={play.botSpeed || "normal"} onChange={(event) => onPrefs({ botSpeed: event.target.value })}>{Object.entries(BOT_SPEEDS).map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+        <label className="field-label">Bot playing preference<select value={play.botStyle || "balanced"} onChange={(event) => onPrefs({ botStyle: event.target.value })}>{Object.entries(BOT_STYLES).map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+        <p className="sub">Pace sets a minimum pause; search may take longer and uses the game clock. Playing preferences gently favour close choices, not a calibrated Elo strength.</p>
         </details>
         <Link className="btn match-action" href="/?online=1"><ColorIcon name="friends" />Play a Friend</Link>
         <Link className="btn match-action" href="/hub"><ColorIcon name="star" />Tournaments</Link>
