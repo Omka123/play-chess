@@ -5,7 +5,7 @@ import { authOptions, googleAuthEnabled } from "@/lib/auth";
 import ContentShell from "@/components/ContentShell";
 import GoogleLogin from "@/components/GoogleLogin";
 
-export const metadata = { title: "Sign in | ChessNexa" };
+export const metadata = { title: "Sign in | ChessNexa", robots: { index: false, follow: false } };
 export default async function Login({ searchParams }) {
   if (await getServerSession(authOptions)) redirect("/account");
   const params = await searchParams;

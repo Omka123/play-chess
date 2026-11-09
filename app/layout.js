@@ -3,6 +3,8 @@ import "./globals.css";
 import { siteUrl } from "@/lib/site";
 import AuthProvider from "@/components/AuthProvider";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import AdsterraNetwork from "@/components/AdsterraNetwork";
+import { adProvider } from "@/lib/adsterra";
 
 const font = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
 
@@ -19,9 +21,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={font.variable}>
       <head>
-        {process.env.NODE_ENV === "production" && <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9915062612412572" crossOrigin="anonymous" />}
+        {process.env.NODE_ENV === "production" && adProvider() === "adsense" && <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9915062612412572" crossOrigin="anonymous" />}
       </head>
-      <body><AuthProvider>{children}</AuthProvider><GoogleAnalytics /></body>
+      <body><AuthProvider>{children}</AuthProvider>{adProvider() === "adsterra" && <AdsterraNetwork />}<GoogleAnalytics /></body>
     </html>
   );
 }

@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { adProvider } from "@/lib/adsterra";
+import AdsterraAd from "./AdsterraAd";
 
 export default function ResponsiveAd() {
+  if (adProvider() === "adsterra") return <AdsterraAd />;
+  if (adProvider() !== "adsense") return null;
+  return <GoogleResponsiveAd />;
+}
+
+function GoogleResponsiveAd() {
   const element = useRef(null);
   const initialized = useRef(false);
 

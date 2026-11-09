@@ -341,7 +341,7 @@ export default function Gambit() {
         <div id="mobile-navigation-options" className={`mobile-navigation-options${mobileMenuOpen ? " is-open" : ""}`}>
         <div className="sidebar-extra">
         <Link href={account?.user ? "/account" : "/login"} className="sidebar-history"><span className="nav-icon"><ColorIcon name="history" size={29} /></span>Game history<span className="nav-detail">Review your past games</span></Link>
-        <Link href="/hub" className="sidebar-history"><span className="nav-icon"><ColorIcon name="friends" size={29} /></span>Player hub<span className="nav-detail">Clubs, events and daily chess</span></Link>
+        {account?.user && <Link href="/hub" className="sidebar-history"><span className="nav-icon"><ColorIcon name="friends" size={29} /></span>Player hub<span className="nav-detail">Clubs, events and daily chess</span></Link>}
         <Link href="/improve" className="sidebar-history"><span className="nav-icon"><ColorIcon name="puzzle" size={29} /></span>Training<span className="nav-detail">Puzzles and learning progress</span></Link>
         <Link href="/analysis" className="sidebar-history"><span className="nav-icon"><ColorIcon name="learn" size={29} /></span>Analysis studio<span className="nav-detail">Import PGN or FEN</span></Link>
         </div>
@@ -416,6 +416,7 @@ export default function Gambit() {
         </MatchPanel>
         <MatchPromotion />
       </main>
+      <section className="home-learning" aria-labelledby="home-about-title"><span className="eyebrow">WHAT IS CHESSNEXA?</span><h2 id="home-about-title">A free place to play chess and understand your games.</h2><p>ChessNexa is an independent chess practice website. You can start a game straight away without an account: choose one of five computer opponents, send a friend a private invite link, or solve mate-in-one puzzles. Signed-in players can also enter rated matchmaking and keep a saved game history.</p><p>After a game, go back through your moves or open the <Link href="/analysis">analysis studio</Link>, which runs Stockfish in your browser. Its evaluations are training estimates rather than a coach's verdict. The <Link href="/learn">{LESSONS.length} chess guides</Link> explain one idea at a time with positions you can step through, and our <Link href="/editorial">guide methodology</Link> describes how those positions are checked.</p></section>
       <section className="home-learning"><span className="eyebrow">PLAY WITH A PLAN</span><h2>Learn something you can use in your next game.</h2><p>Practice opening plans, recognize tactical threats, and understand why a position is checkmate. Read a guide, try its board exercise, then test the idea in a game.</p><div className="lesson-grid">{LESSONS.map((lesson) => <Link key={lesson.slug} className="lesson-card" href={`/learn/${lesson.slug}`}><span className="eyebrow">{lesson.category}</span><h3>{lesson.title}</h3><p>{lesson.description}</p><span className="lesson-link">Read & practice →</span></Link>)}</div></section>
       <SiteFooter />
     </>

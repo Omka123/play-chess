@@ -20,6 +20,15 @@ for (const [slug, examples] of Object.entries(LESSON_EXAMPLES)) {
     if (example.id === "three-moves-to-promotion") { assert.equal(game.get("a8").type, "q"); assert.equal(game.isGameOver(), false); }
     if (example.id === "fork-and-follow-through") assert.equal(game.get("d6").type, "n");
     if (example.id === "develop-before-castling") { assert.equal(game.get("g1").type, "k"); assert.equal(game.get("f1").type, "r"); }
+    const start = new Chess(example.fen);
+    if (example.id === "castling-past-an-attack") { assert.ok(!start.moves().includes("O-O")); assert.ok(start.moves().includes("O-O-O")); assert.equal(game.get("c1").type, "k"); assert.equal(game.get("g8").type, "k"); }
+    if (example.id === "active-move-drops-defender") { assert.equal(game.get("d4").type, "b"); assert.ok(!game.moves({ verbose: true }).some((move) => move.to === "d4")); assert.ok(start.isAttacked("d4", "b")); assert.ok(start.isAttacked("d4", "w")); }
+    if (example.id === "rook-cuts-off-king") { const wall = new Chess(example.fen); wall.move("a5"); assert.ok(!wall.moves({ verbose: true }).some((move) => move.to[0] === "d")); assert.equal(game.get("a8").type, "q"); }
+    if (example.id === "queen-promotion-stalemate") assert.equal(game.get("c8").type, "q");
+    if (example.id === "rook-promotion-keeps-win") { const rook = new Chess(example.fen); rook.move("c8=R"); assert.equal(rook.isStalemate(), false); assert.equal(game.get("h8").type, "r"); assert.equal(game.isGameOver(), false); }
+    if (example.id === "escape-square-saves-king") { const check = new Chess(example.fen); check.move("Ra8+"); assert.equal(check.isCheckmate(), false); assert.deepEqual(check.moves(), ["Kh7"]); }
+    if (example.id === "block-only-delays-mate") { const check = new Chess(example.fen); check.move("Ra8+"); assert.deepEqual(check.moves(), ["Rd8"]); }
+    if (example.id === "review-a-short-loss") assert.ok(game.isCheckmate());
   }
 }
 for (const lesson of LESSONS) {

@@ -74,7 +74,7 @@ Status: `[x]` implemented baseline; `[ ]` remaining work. Priorities: P0 = produ
 - [ ] **P2:** Expand endgame training beyond mate patterns into assessed conversion/defence exercises.
 - [ ] **P2:** Add multiplayer puzzle races with authoritative clocks and reconnect handling.
 - [ ] **P2:** Translate the full application and review explanations into Hindi/Marathi with human review.
-- [x] Add understanding checkpoints for all fifteen guides and separate server-enforced assessed course progression.
+- [x] Add understanding checkpoints for all guides and separate server-enforced assessed course progression.
 
 ## 5. Analysis, openings and insights
 
@@ -188,7 +188,7 @@ Operations follow-up adds executable configuration checks, read-only smoke probe
 
 ## Implementation update - 28 October 2026
 
-Added reconnect/RTT feedback and offline move blocking, confirmed-clock projection, configurable bot pace/preferences, historical tactic/revision summaries, checkpoints for all fifteen lessons, assessed course prerequisites, shared-study viewer/editor roles and invitation rotation, tab-local draft recovery and comment revisions, configurable automatic event settings/withdrawals/recovery, alternate curated fork replies, and timed/endgame practice modes. These are tested baselines; unchecked development and production setup remain outstanding. Basic self-reported lesson completion is retained separately from assessed course progress.
+Added reconnect/RTT feedback and offline move blocking, confirmed-clock projection, configurable bot pace/preferences, historical tactic/revision summaries, checkpoints for all lessons, assessed course prerequisites, shared-study viewer/editor roles and invitation rotation, tab-local draft recovery and comment revisions, configurable automatic event settings/withdrawals/recovery, alternate curated fork replies, and timed/endgame practice modes. These are tested baselines; unchecked development and production setup remain outstanding. Basic self-reported lesson completion is retained separately from assessed course progress.
 
 
 ## MongoDB storage

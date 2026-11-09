@@ -35,3 +35,4 @@ await import("./operationsCheck.mjs");
 await import("./roadmapProgress.mjs");
 await import("./admin.mjs");
 await import("./developmentOrigin.mjs");
+await import("./adsterra.mjs");

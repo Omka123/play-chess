@@ -35,6 +35,19 @@ All five new pages were browser-checked at 390px width; all four new exercises w
 
 Verification: automated chess tests passed, including the worked examples and their final results. Browser checks passed for stepping through castling and the fork capture, resetting examples, distinguishing mate/stalemate, guide canonical URLs, the editorial page, corrected About text and a 390px layout. External Google scripts were stubbed during browser checks so no advertising impressions were generated.
 
+## November 2026 follow-up
+
+Google declined the site again. Checked `https://www.chessnexa.in` on 5 November 2026: the October pages were live, but no support email or operator was published, and `SITE_URL` pointed to `chessnexa.in`, which redirects to `www`, so the sitemap, `robots.txt` and canonical tags all named a redirecting address.
+
+Prepared locally:
+
+- Added a homepage section explaining what the site is.
+- Merged `checkmate-versus-stalemate` into `checkmate-or-stalemate`, with a permanent redirect. The library is now fourteen guides.
+- Added worked examples to the six board-based guides that lacked one (castling, hanging pieces, rook endings, promotion, back-rank mate and game review), plus a time-budget section in the clock guide. Moves and key claims are checked in `tests/lessons.mjs`.
+- Hid Insights and Player hub from signed-out menus, and added `noindex` to login, account, hub and insights.
+- Removed the "support email not yet published" notice from Contact. Without `SUPPORT_EMAIL`, signed-out visitors still have no way to make contact.
+- "Keep learning" links now prefer the same category and vary by guide.
+
 ## Before requesting another review
 
 - [x] Exact issue confirmed: Low value content.

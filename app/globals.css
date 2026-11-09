@@ -877,3 +877,11 @@ main.match-layout { max-width:1120px; grid-template-columns:minmax(0,500px) 300p
 .admin-system dl { display:grid; grid-template-columns:minmax(140px,1fr) 2fr; gap:14px; }
 .admin-system dd { margin:0; overflow-wrap:anywhere; }
 @media(max-width:600px) { .admin-heading { align-items:flex-start; flex-direction:column; gap:10px; } .admin-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .admin-stats .card { padding:14px; } .admin-stats strong { font-size:26px; } .admin-toolbar nav { width:100%; } .admin-toolbar nav .btn { flex:1; padding:8px; } .admin-pagination { flex-wrap:wrap; font-size:13px; } .admin-system dl { grid-template-columns:1fr; gap:8px; } .admin-system dd { margin-bottom:12px; } }
+
+.adsterra-network { max-width:1000px; margin:24px auto; padding:0 12px; box-sizing:border-box; }
+.adsterra-ad { width:100%; min-width:0; text-align:center; margin:20px 0; overflow:hidden; }
+.adsterra-ad iframe { display:block; margin:8px auto; border:0; max-width:100%; }
+.adsterra-home-ads { display:grid; grid-template-columns:minmax(0,1fr) 160px; gap:24px; align-items:start; }
+.adsterra-native { margin:20px 0; overflow:hidden; }
+.adsterra-sponsored-link { display:block; width:fit-content; margin:12px auto; padding:12px; color:var(--accent); }
+@media(max-width:959px) { .adsterra-home-ads { display:block; } .adsterra-vertical { display:none; } }

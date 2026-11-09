@@ -7,5 +7,8 @@ export default function nextConfig(phase) {
     distDir: phase === PHASE_DEVELOPMENT_SERVER
       ? `.next-dev/${/^[a-f0-9-]+$/.test(process.env.CHESSNEXA_DEV_SESSION || "") ? process.env.CHESSNEXA_DEV_SESSION : "manual"}`
       : ".next",
+    async redirects() {
+      return [{ source: "/learn/checkmate-versus-stalemate", destination: "/learn/checkmate-or-stalemate", permanent: true }];
+    },
   };
 }

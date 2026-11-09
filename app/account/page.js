@@ -10,7 +10,7 @@ import CommunityDashboard from "@/components/CommunityDashboard";
 import { isModerator } from "@/lib/moderation";
 import { isAdmin } from "@/lib/adminAccess";
 
-export const metadata = { title: "Your player account | ChessNexa" };
+export const metadata = { title: "Your player account | ChessNexa", robots: { index: false, follow: false } };
 export default async function Account() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
