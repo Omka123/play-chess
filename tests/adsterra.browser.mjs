@@ -7,7 +7,7 @@ try {
   for (const domain of ["abscloud.org", "bauval.org", "pagead2.googlesyndication.com", "www.googletagmanager.com"]) await context.route(`https://${domain}/**`, route => {
     requested.push(route.request().url());
     const body = route.request().url().includes("bauval.org/22/")
-      ? 'try { parent.document.addEventListener("click", function () { parent.open("https://example.invalid/unwanted-ad"); }); } catch (_) {}'
+      ? 'var creative=document.createElement("div"); creative.textContent="Test banner loaded"; document.body.appendChild(creative); try { parent.document.addEventListener("click", function () { parent.open("https://example.invalid/unwanted-ad"); }); } catch (_) {}'
       : "/* isolated ad test */";
     return route.fulfill({ contentType: "application/javascript", body });
   });
@@ -25,6 +25,16 @@ try {
   assert.ok(!requested.some(url => url.includes("bauval.org/14/")));
   assert.ok(!requested.some(url => url.includes("bauval.org/21/")));
   assert.equal(await page.locator(".adsterra-sponsored-link").count(), 0);
+  const adFrame = page.locator(".adsterra-ad iframe").first();
+  assert.ok((await adFrame.getAttribute("src")).startsWith("/ads/adsterra/"));
+  await adFrame.scrollIntoViewIfNeeded();
+  await adFrame.contentFrame().getByText("Test banner loaded", { exact: true }).waitFor();
+  assert.ok(requested.some(url => url.includes("bauval.org/22/")), "Banner SDK must actually execute");
+  assert.equal((await context.request.get("http://localhost:3100/ads/adsterra/not-a-unit")).status(), 404);
+  const frameResponse = await context.request.get("http://localhost:3100/ads/adsterra/leaderboard");
+  assert.equal(frameResponse.status(), 200);
+  assert.equal(frameResponse.headers()["x-robots-tag"], "noindex, nofollow");
+  assert.ok(frameResponse.headers()["content-security-policy"].startsWith("sandbox "));
   const sandbox = await page.locator(".adsterra-ad iframe").first().getAttribute("sandbox");
   assert.ok(sandbox.includes("allow-scripts") && !sandbox.includes("allow-same-origin") && !sandbox.includes("allow-top-navigation"));
   const before = context.pages().length;
