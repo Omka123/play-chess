@@ -1,31 +1,17 @@
-# Adsterra advertising
+# Display advertisements only
 
-The supplied Adsterra units are configured in `lib/adsterra.js`. These are separate
-from Google AdSense. Set `NEXT_PUBLIC_AD_PROVIDER=adsterra` in the deployment and
-rebuild; `adsense` selects the existing Google units, and `none` disables both
-integrations. Adsterra is the default when this variable is absent.
+Set NEXT_PUBLIC_AD_PROVIDER to adsense, adsterra or none and rebuild/redeploy.
+Adsterra retains only responsive banner slots on the home and learning pages.
+Popunder scripts, the page-level native script and the sponsored smartlink were
+removed because page-level advertising code could attach handlers to game buttons.
+Banner scripts run in sandboxed frames without same-origin access or top-level
+navigation privileges. They cannot attach listeners to the game document. A user
+can still intentionally open an advertisement by clicking the advertisement itself.
 
-Ads run in production builds. `npm run dev` does not request real advertisements.
-For a local ad preview use `npm run build` and `npm start` with an available port.
-Ad blockers, publisher/domain authorization and network availability can affect
-delivery. Code installation does not establish provider approval or ad fill.
+For Google AdSense, disable Vignette ads in Ads ? Edit site ? Overlay formats,
+then Apply to site. Alternatively turn off Auto ads to keep manual units only.
+Those publisher settings are controlled in AdSense, not by this code change.
 
-- Home page: responsive banner, desktop vertical banner, native widget and clearly
-  labelled sponsored link.
-- Learning pages: responsive banner, native widget and sponsored link.
-- Responsive banners select 728×90, 468×60 or 300×250 according to available width.
-  Containers narrower than 300px omit the banner rather than overflow.
-- The desktop vertical slot selects 160×600 on tall windows or 160×300 otherwise.
-- Each banner uses its own iframe so the supplied `atOptions` configurations do
-  not overwrite each other.
-- The two additional supplied scripts load on public play/learning routes. These
-  execute third-party code and can attach page-level advertising behavior.
-- The integration does not mount on login, admin or account routes. Third-party
-  scripts already loaded during a public-page visit can retain their own handlers
-  until a full-page navigation/reload; Adsterra controls that behavior.
-
-The native widget uses the supplied container ID. Its loader mounts with the widget
-and is re-created after returning from an excluded route during client navigation.
-
-The existing AdSense publisher verification metadata and ads.txt remain available.
-The Google ad loader is loaded only when the AdSense provider is selected.
+After deployment, fully reload or close old tabs to discard third-party handlers
+loaded by the previous version. Development mode does not load real ads. Browser
+regression checks stub ad traffic and simulate a banner trying to intercept clicks.

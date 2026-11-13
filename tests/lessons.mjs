@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import { Chess } from "chess.js";
 import { LESSONS } from "../lib/lessons.js";
 import { LESSON_EXAMPLES } from "../lib/lessonExamples.js";
+import { BEGINNER_PATH } from "../lib/beginnerPath.js";
+
+assert.equal(new Set(BEGINNER_PATH.map(step => step.id)).size, BEGINNER_PATH.length);
+for (const step of BEGINNER_PATH) {
+  for (const slug of step.guides) assert.ok(LESSONS.some(lesson => lesson.slug === slug), `Broken beginner-path guide: ${slug}`);
+}
 
 assert.equal(new Set(LESSONS.map((lesson) => lesson.slug)).size, LESSONS.length);
 const exampleIds = new Set();

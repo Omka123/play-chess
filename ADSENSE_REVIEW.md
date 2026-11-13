@@ -64,3 +64,31 @@ Prepared locally:
 - [Google: Make sure your site's pages are ready for AdSense](https://support.google.com/adsense/answer/7299563)
 - [Google: What to do when your site is not ready to show ads](https://support.google.com/adsense/answer/12176698)
 - [Google Publisher Policies: screens without publisher content](https://support.google.com/publisherpolicies/answer/11112688)
+
+## 13 November 2026: useful public practice and remaining live gaps
+
+Read-only live checks returned HTTP 200 for Learn, Contact, About, robots.txt and
+the sitemap. Learn HTML still referenced the old click-ad script URLs; the local
+display-only ad fix needs deployment. Contact still exposed no mailto contact.
+Neither finding establishes Google's exact review rationale, but both deserve
+attention before another submission. Public operator/support details must be
+provided by the operator, not inferred from private Google login information.
+The local public metadata setting is still `SITE_URL=https://chessnexa.in`; set
+`SITE_URL=https://www.chessnexa.in` in the deployment before rebuilding so canonical
+URLs and the sitemap use the final hostname. This is separate from `NEXTAUTH_URL`
+and does not replace the localhost OAuth configuration used during development.
+
+Added locally: `/learn/start-here`, a public six-session practice path with specific
+tasks, explained self-check answers, links to existing worked examples and a
+downloadable personal-review worksheet. The learning index links to the plan and
+the sitemap includes it. All explanations and answers are readable without login
+or JavaScript; the worksheet requires no account or upload. No course-completion
+or rating-improvement claim is made.
+
+Remaining before re-review: deploy the changes; verify the actual production pages
+and mobile navigation; publish a monitored support contact; review the text and
+chess examples; check advertising/consent settings in the relevant provider
+dashboard. Adding this path is not a guarantee of AdSense approval or a substitute
+for Google's site-specific decision.
+
+Validation for the November 13 additions: unit tests and production build passed. Browser checks passed for the public practice plan at 390px width with JavaScript disabled, native answer controls, learning-index navigation and worksheet download. External advertising/analytics requests were stubbed. This validates implementation, not Google approval.

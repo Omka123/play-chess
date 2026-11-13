@@ -885,3 +885,10 @@ main.match-layout { max-width:1120px; grid-template-columns:minmax(0,500px) 300p
 .adsterra-native { margin:20px 0; overflow:hidden; }
 .adsterra-sponsored-link { display:block; width:fit-content; margin:12px auto; padding:12px; color:var(--accent); }
 @media(max-width:959px) { .adsterra-home-ads { display:block; } .adsterra-vertical { display:none; } }
+
+.study-path-intro { margin:24px 0; padding:20px; border:1px solid var(--line); border-radius:8px; background:var(--surface); }
+.study-path-session { margin:32px 0; padding-top:24px; border-top:1px solid var(--line); scroll-margin-top:20px; }
+.study-path-answer { padding:14px; background:var(--surface); border:1px solid var(--line); border-radius:8px; margin:18px 0; }
+.study-path-answer summary { cursor:pointer; font-weight:600; line-height:1.6; }
+.study-path-answer p { margin-bottom:0; }
+@media(max-width:600px) { .study-path-intro { padding:14px; } .study-path-intro .btn { white-space:normal; height:auto; min-height:44px; text-align:center; } }

@@ -1,0 +1,34 @@
+CHESSNEXA — ONE DECISION AT A TIME
+Free personal practice worksheet: /learn/start-here
+
+Session/date (optional):
+Skill I want to practise:
+Game mode / clock:
+
+1. POSITION
+Move number and side to move:
+FEN (optional; do not paste a private invitation or session token):
+
+2. MY PLAN
+What did I want the move to achieve?
+Which checks, captures and threats did I examine?
+
+3. THE OPPONENT'S REPLY
+What is the strongest legal reply I found?
+Why does that reply matter?
+
+4. AN ALTERNATIVE
+What else could I play?
+What can the opponent do after that move?
+
+5. REVIEW AFTER THINKING FOR MYSELF
+What did I miss, if anything?
+What concrete line supports that conclusion?
+What remains uncertain about the position?
+
+6. NEXT GAME
+Before moving, I will check __________ because __________.
+One position or pattern to revisit:
+
+No account or upload is needed. Keep these notes on your own device.
+An engine label alone is not a full explanation of a decision.
