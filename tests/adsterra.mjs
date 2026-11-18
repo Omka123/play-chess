@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { ADSTERRA, adsterraDocument, bannerUnit, adsterraPage, adProvider } from "../lib/adsterra.js";
 assert.equal(bannerUnit(299), null);
-assert.equal(bannerUnit(320), "mobile");
+assert.equal(bannerUnit(300), "mobile");
+assert.equal(bannerUnit(320), "mobileBanner");
+assert.equal(ADSTERRA.units.mobileBanner.key, "873b488ad18870fc13a9c9400101be00");
 assert.equal(bannerUnit(468), "banner");
 assert.equal(bannerUnit(728), "leaderboard");
 for (const unit of Object.keys(ADSTERRA.units)) {

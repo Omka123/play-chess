@@ -7,7 +7,7 @@ try {
   for (const domain of ["abscloud.org", "bauval.org", "pagead2.googlesyndication.com", "www.googletagmanager.com"]) await context.route(`https://${domain}/**`, route => {
     requested.push(route.request().url());
     const body = route.request().url().includes("bauval.org/22/")
-      ? 'var creative=document.createElement("div"); creative.textContent="Test banner loaded"; document.body.appendChild(creative); try { parent.document.addEventListener("click", function () { parent.open("https://example.invalid/unwanted-ad"); }); } catch (_) {}'
+      ? 'var creative=document.createElement("div"); creative.textContent="Test banner loaded"; document.body.appendChild(creative); var image=document.createElement("img"); image.width=100; image.height=50; image.src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%2250%22%3E%3C/svg%3E"; document.body.appendChild(image); try { parent.document.addEventListener("click", function () { parent.open("https://example.invalid/unwanted-ad"); }); } catch (_) {}'
       : "/* isolated ad test */";
     return route.fulfill({ contentType: "application/javascript", body });
   });
@@ -19,7 +19,7 @@ try {
     await ad.locator("iframe").waitFor();
     const dimensions = await ad.evaluate(node => ({ container: node.clientWidth, iframe: Number(node.querySelector("iframe").width) }));
     assert.ok(dimensions.iframe <= dimensions.container);
-    assert.ok([300, 468, 728].includes(dimensions.iframe));
+    assert.ok([300, 320, 468, 728].includes(dimensions.iframe));
   }
   assert.ok(!requested.some(url => url.includes("abscloud.org/1/")));
   assert.ok(!requested.some(url => url.includes("bauval.org/14/")));
@@ -29,6 +29,9 @@ try {
   assert.ok((await adFrame.getAttribute("src")).startsWith("/ads/adsterra/"));
   await adFrame.scrollIntoViewIfNeeded();
   await adFrame.contentFrame().getByText("Test banner loaded", { exact: true }).waitFor();
+  await page.locator('.adsterra-ad [data-ad-status="ready"]').first().waitFor();
+  await page.evaluate(() => window.postMessage({ type: "chessnexa-ad", unit: "leaderboard", status: "empty" }, "*"));
+  assert.equal(await page.locator('.adsterra-ad [data-ad-status="empty"]').count(), 0, "Ignore messages from outside the ad frame");
   assert.ok(requested.some(url => url.includes("bauval.org/22/")), "Banner SDK must actually execute");
   assert.equal((await context.request.get("http://localhost:3100/ads/adsterra/not-a-unit")).status(), 404);
   const frameResponse = await context.request.get("http://localhost:3100/ads/adsterra/leaderboard");
@@ -47,5 +50,13 @@ try {
   await page.goto("http://localhost:3100/learn");
   await page.locator(".adsterra-ad iframe").waitFor();
   assert.equal(await page.locator(".adsbygoogle").count(), 0);
-  console.log("Passed: production Adsterra rendering, responsive banner widths, blocked click-ad scripts, iframe isolation, Start game without popups, login exclusion and Google unit separation. All ad traffic was stubbed.");
+  const emptyContext = await browser.newContext();
+  for (const domain of ["bauval.org", "pagead2.googlesyndication.com", "www.googletagmanager.com"]) await emptyContext.route(`https://${domain}/**`, route => route.fulfill({ contentType: "application/javascript", body: "" }));
+  const emptyPage = await emptyContext.newPage();
+  await emptyPage.goto("http://localhost:3100/learn");
+  await emptyPage.locator(".adsterra-ad iframe").scrollIntoViewIfNeeded();
+  await emptyPage.getByText("Advertisement unavailable.", { exact: true }).waitFor({ timeout: 25000 });
+  assert.equal(await emptyPage.locator(".adsterra-ad iframe").count(), 0, "Remove empty frames instead of leaving white boxes");
+  await emptyContext.close();
+  console.log("Passed: responsive banners including 320×50, script execution, empty-response fallback, message-source validation, iframe isolation, Start game without popups and provider separation. All ad traffic was stubbed.");
 } finally { await browser.close(); }
