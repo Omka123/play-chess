@@ -10,6 +10,8 @@ for (const unit of Object.keys(ADSTERRA.units)) {
   const html = adsterraDocument(unit);
   assert.ok(html.includes(`https://bauval.org/22/${ADSTERRA.units[unit].key}`));
   assert.ok(html.includes('"format":"iframe"'));
+  assert.ok(html.includes("window.atOptions="));
+  assert.ok(!html.includes("var atOptions="));
 }
 assert.equal(adsterraPage("/"), true);
 assert.equal(adsterraPage("/learn/test"), true);

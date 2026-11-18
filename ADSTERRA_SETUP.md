@@ -44,3 +44,18 @@ In Adsterra Websites, verify the exact domain and individual banner units, then
 compare each unit's current GET CODE with the configured key and loader URL. If
 real-browser Network responses are still empty, ask Adsterra support to inspect
 delivery for `www.chessnexa.in` and the affected unit IDs.
+
+## Confirmed SDK compatibility fix (18 November 2026)
+
+The real banner loader was reproduced in an isolated fixture with all secondary
+network requests stubbed. With the old top-level `var atOptions` declaration it
+threw `Cannot delete property 'atOptions' of #<Window>`. With `window.atOptions`
+assignment the error disappeared. The global var binding made that property
+non-configurable; the SDK expects to delete it after reading its settings.
+
+The wrapper now uses a configurable window property, as in the supplied publisher
+snippet. The regression loader performs strict-mode deletion before rendering its
+test banner, so this failure is no longer hidden by a simplified stub. Sandbox
+protection and the removal of page-level click-ad scripts are unchanged. The
+earlier empty-response observation in an automated browser was not a complete
+diagnosis of banner rendering in a regular browser.

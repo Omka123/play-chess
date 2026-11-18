@@ -7,11 +7,13 @@ try {
   for (const domain of ["abscloud.org", "bauval.org", "pagead2.googlesyndication.com", "www.googletagmanager.com"]) await context.route(`https://${domain}/**`, route => {
     requested.push(route.request().url());
     const body = route.request().url().includes("bauval.org/22/")
-      ? 'var creative=document.createElement("div"); creative.textContent="Test banner loaded"; document.body.appendChild(creative); var image=document.createElement("img"); image.width=100; image.height=50; image.src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%2250%22%3E%3C/svg%3E"; document.body.appendChild(image); try { parent.document.addEventListener("click", function () { parent.open("https://example.invalid/unwanted-ad"); }); } catch (_) {}'
+      ? '"use strict"; var supplied=window.atOptions; delete window.atOptions; if(!supplied || !supplied.key || supplied.format!=="iframe") throw Error("Missing banner configuration"); var creative=document.createElement("div"); creative.textContent="Test banner loaded"; document.body.appendChild(creative); var image=document.createElement("img"); image.width=100; image.height=50; image.src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%2250%22%3E%3C/svg%3E"; document.body.appendChild(image); try { parent.document.addEventListener("click", function () { parent.open("https://example.invalid/unwanted-ad"); }); } catch (_) {}'
       : "/* isolated ad test */";
     return route.fulfill({ contentType: "application/javascript", body });
   });
   const page = await context.newPage(); page.setDefaultTimeout(30000);
+  const errors = [];
+  context.on("weberror", event => errors.push(event.error().message));
   for (const width of [375, 600, 1200]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("http://localhost:3100/");
@@ -58,5 +60,6 @@ try {
   await emptyPage.getByText("Advertisement unavailable.", { exact: true }).waitFor({ timeout: 25000 });
   assert.equal(await emptyPage.locator(".adsterra-ad iframe").count(), 0, "Remove empty frames instead of leaving white boxes");
   await emptyContext.close();
+  assert.equal(errors.length, 0, errors.join("\n"));
   console.log("Passed: responsive banners including 320×50, script execution, empty-response fallback, message-source validation, iframe isolation, Start game without popups and provider separation. All ad traffic was stubbed.");
 } finally { await browser.close(); }
