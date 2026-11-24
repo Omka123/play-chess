@@ -2,10 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import { adProvider } from "@/lib/adsterra";
-import AdsterraAd from "./AdsterraAd";
 
 export default function ResponsiveAd() {
-  if (adProvider() === "adsterra") return <AdsterraAd />;
+  // The shared layout mounts the async native Adsterra unit once per public page.
+  if (adProvider() === "adsterra") return null;
   if (adProvider() !== "adsense") return null;
   return <GoogleResponsiveAd />;
 }

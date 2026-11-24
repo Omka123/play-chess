@@ -6,6 +6,8 @@ assert.equal(bannerUnit(320), "mobileBanner");
 assert.equal(ADSTERRA.units.mobileBanner.key, "873b488ad18870fc13a9c9400101be00");
 assert.equal(bannerUnit(468), "banner");
 assert.equal(bannerUnit(728), "leaderboard");
+assert.equal(ADSTERRA.native.src, "https://bauval.org/21/1d589910dbc993bba5edb9c597ce4a5f");
+assert.equal(ADSTERRA.native.container, "container-1d589910dbc993bba5edb9c597ce4a5f");
 for (const unit of Object.keys(ADSTERRA.units)) {
   const html = adsterraDocument(unit);
   assert.ok(html.includes(`https://bauval.org/22/${ADSTERRA.units[unit].key}`));
